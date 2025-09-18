@@ -103,3 +103,18 @@ export async function getAllWorksheetData(): Promise<ExcelData | null> {
     return null;
   }
 }
+
+export async function selectRangeByAddress(address: string): Promise<boolean> {
+  try {
+    return await Excel.run(async (context) => {
+      const sheet = context.workbook.worksheets.getActiveWorksheet();
+      const range = sheet.getRange(address);
+      range.select();
+      await context.sync();
+      return true;
+    });
+  } catch (error) {
+    console.error("Error selecting range:", error);
+    return false;
+  }
+}

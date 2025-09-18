@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Settings24Regular, Chat24Regular, Table24Regular, Home24Regular } from "@fluentui/react-icons";
 import ChatInterface, { ChatMessage } from "./ChatInterface";
 import Settings from "./Settings";
-import { getSelectedData, getAllWorksheetData, ExcelData } from "../taskpane";
+import { getSelectedData, getAllWorksheetData, ExcelData, selectRangeByAddress } from "../taskpane";
 import { OpenAIService } from "../services/openai";
 import { getApiSettings, validateApiSettings } from "../utils/settings";
 
@@ -137,6 +137,31 @@ const App: React.FC<AppProps> = () => {
   // 简化删除函数，只需要从选中列表中移除
   const handleRemoveSelectedData = (dataId: string) => {
     setSelectedDataList(prev => prev.filter(data => data.id !== dataId));
+  };
+
+  // 处理选中Excel范围
+  const handleSelectExcelRange = async (address: string) => {
+    try {
+      const success = await selectRangeByAddress(address);
+      if (!success) {
+        const errorMessage: ChatMessage = {
+          id: Date.now().toString(),
+          type: 'system',
+          content: `无法选中范围 ${address}，请确保该范围存在`,
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, errorMessage]);
+      }
+    } catch (error) {
+      console.error('Error selecting Excel range:', error);
+      const errorMessage: ChatMessage = {
+        id: Date.now().toString(),
+        type: 'system',
+        content: '选中Excel范围时出现错误，请重试',
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    }
   };
 
   const handleSettingsClose = () => {
@@ -297,6 +322,7 @@ const App: React.FC<AppProps> = () => {
             messages={messages}
             onSendMessage={handleSendMessage}
             onRemoveSelectedData={handleRemoveSelectedData}
+            onSelectExcelRange={handleSelectExcelRange}
             isLoading={isLoading}
             selectedDataList={selectedDataList}
           />
