@@ -1,9 +1,10 @@
 import * as React from "react";
 import { useState, useRef, useEffect } from "react";
 import { Send24Regular, Table24Regular, Person24Regular, Bot24Regular, Copy24Regular, Delete24Regular } from "@fluentui/react-icons";
-import ReactMarkdown from "react-markdown";
+import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ExcelData } from "../taskpane";
+import "./markdown.css";
 
 export interface ChatMessage {
   id: string;
@@ -180,49 +181,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 <div className="whitespace-pre-wrap">{message.content}</div>
               ) : (
                 // AI消息使用 Markdown 渲染
-                <div className="prose prose-sm max-w-none prose-headings:text-gray-800 prose-p:text-gray-700 prose-strong:text-gray-800 prose-code:text-blue-600 prose-code:bg-blue-50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-gray-50 prose-pre:border prose-blockquote:border-l-4 prose-blockquote:border-blue-400 prose-blockquote:bg-blue-50">
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    components={{
-                      // 自定义代码块样式
-                      code: ({ inline, className, children, ...props }: any) => {
-                        if (inline) {
-                          return (
-                            <code className="bg-blue-100 text-blue-800 px-1 py-0.5 rounded text-xs font-mono" {...props}>
-                              {children}
-                            </code>
-                          );
-                        }
-                        return (
-                          <pre className="bg-gray-100 border border-gray-200 rounded-lg p-3 overflow-x-auto">
-                            <code className="text-sm font-mono text-gray-800" {...props}>
-                              {children}
-                            </code>
-                          </pre>
-                        );
-                      },
-                      // 自定义表格样式
-                      table: ({ children }) => (
-                        <div className="overflow-x-auto my-3">
-                          <table className="min-w-full border border-gray-200 rounded-lg">
-                            {children}
-                          </table>
-                        </div>
-                      ),
-                      th: ({ children }) => (
-                        <th className="bg-gray-50 border-b border-gray-200 px-3 py-2 text-left text-xs font-medium text-gray-700">
-                          {children}
-                        </th>
-                      ),
-                      td: ({ children }) => (
-                        <td className="border-b border-gray-100 px-3 py-2 text-sm text-gray-600">
-                          {children}
-                        </td>
-                      ),
-                    }}
-                  >
-                    {message.content}
-                  </ReactMarkdown>
+                <div className="markdown-content">
+                  <Markdown remarkPlugins={[remarkGfm]}>{message.content}</Markdown>
                 </div>
               )}
             </div>
