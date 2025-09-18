@@ -21,6 +21,7 @@ const App: React.FC<AppProps> = () => {
   const [excelData, setExcelData] = useState<ExcelData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [apiConfigured, setApiConfigured] = useState(false);
+  const [usedDataIds, setUsedDataIds] = useState<Set<string>>(new Set()); // 跟踪已使用的数据ID
 
   useEffect(() => {
     // Check if API is configured on startup
@@ -39,12 +40,15 @@ const App: React.FC<AppProps> = () => {
       setExcelData(data);
 
       if (data) {
+        const dataId = Date.now().toString(); // 为数据生成唯一ID
         const systemMessage: ChatMessage = {
           id: Date.now().toString(),
           type: 'system',
           content: `已读取 Excel 数据：${data.address} (${data.values.length} 行${data.headers ? `, 包含列标题` : ''})`,
           timestamp: new Date(),
-          excelData: data
+          excelData: data,
+          isDeletable: true,  // 新读取的数据可以删除
+          dataId: dataId
         };
         setMessages(prev => [...prev, systemMessage]);
       } else {
@@ -96,6 +100,19 @@ const App: React.FC<AppProps> = () => {
         conversationHistory
       );
 
+      // 如果使用了数据，标记为已使用
+      if (data || excelData) {
+        const currentDataId = data ? Date.now().toString() :
+          messages.find(m => m.excelData === excelData)?.dataId;
+        if (currentDataId) {
+          setUsedDataIds(prev => new Set(prev).add(currentDataId));
+          // 将使用过的数据消息标记为不可删除
+          setMessages(prev => prev.map(m =>
+            m.dataId === currentDataId ? { ...m, isDeletable: false } : m
+          ));
+        }
+      }
+
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
@@ -118,6 +135,17 @@ const App: React.FC<AppProps> = () => {
     }
   };
 
+  const handleDeleteData = (dataId: string) => {
+    // 移除包含此数据ID的消息
+    setMessages(prev => prev.filter(m => m.dataId !== dataId));
+
+    // 如果当前选中的数据就是被删除的数据，清除选中状态
+    const messageWithData = messages.find(m => m.dataId === dataId);
+    if (messageWithData && excelData === messageWithData.excelData) {
+      setExcelData(null);
+    }
+  };
+
   const handleSettingsClose = () => {
     // Re-check API configuration
     const settings = getApiSettings();
@@ -134,6 +162,7 @@ const App: React.FC<AppProps> = () => {
   const startNewChat = () => {
     setMessages([]);
     setExcelData(null);
+    setUsedDataIds(new Set()); // 重置已使用数据ID
   };
 
   const renderWelcomeScreen = () => (
@@ -274,6 +303,7 @@ const App: React.FC<AppProps> = () => {
           <ChatInterface
             messages={messages}
             onSendMessage={handleSendMessage}
+            onDeleteData={handleDeleteData}
             isLoading={isLoading}
             excelData={excelData}
           />
