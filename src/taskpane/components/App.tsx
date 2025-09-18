@@ -18,7 +18,7 @@ const App: React.FC<AppProps> = () => {
   const [currentView, setCurrentView] = useState<AppView>('welcome');
   const [chatMode, setChatMode] = useState<ChatMode>('chat');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [excelData, setExcelData] = useState<ExcelData | null>(null);
+  const [selectedDataList, setSelectedDataList] = useState<ExcelData[]>([]); // 改为数组
   const [isLoading, setIsLoading] = useState(false);
   const [apiConfigured, setApiConfigured] = useState(false);
   const [usedDataIds, setUsedDataIds] = useState<Set<string>>(new Set()); // 跟踪已使用的数据ID
@@ -37,21 +37,20 @@ const App: React.FC<AppProps> = () => {
   const handleReadExcelData = async (readAll: boolean = false) => {
     try {
       const data = readAll ? await getAllWorksheetData() : await getSelectedData();
-      setExcelData(data);
 
       if (data) {
-        const dataId = Date.now().toString(); // 为数据生成唯一ID
-        const systemMessage: ChatMessage = {
-          id: Date.now().toString(),
-          type: 'system',
-          content: `已读取 Excel 数据：${data.address} (${data.values.length} 行${data.headers ? `, 包含列标题` : ''})`,
-          timestamp: new Date(),
-          excelData: data,
-          isDeletable: true,  // 新读取的数据可以删除
-          dataId: dataId
-        };
-        setMessages(prev => [...prev, systemMessage]);
+        // 检查是否已经选中了相同的数据
+        const isDuplicate = selectedDataList.some(existing =>
+          existing.address === data.address &&
+          JSON.stringify(existing.values) === JSON.stringify(data.values)
+        );
+
+        if (!isDuplicate) {
+          setSelectedDataList(prev => [...prev, data]);
+        }
+        // 移除了系统消息的添加，只显示在列表中
       } else {
+        // 只在没有数据时显示错误消息
         const errorMessage: ChatMessage = {
           id: Date.now().toString(),
           type: 'system',
@@ -72,13 +71,12 @@ const App: React.FC<AppProps> = () => {
     }
   };
 
-  const handleSendMessage = async (content: string, data?: ExcelData) => {
+  const handleSendMessage = async (content: string) => {
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       type: 'user',
       content,
       timestamp: new Date(),
-      excelData: data
     };
 
     setMessages(prev => [...prev, userMessage]);
@@ -94,23 +92,24 @@ const App: React.FC<AppProps> = () => {
         content: m.content
       }));
 
+      // 使用所有选中的数据
       const response = await openAIService.sendMessage(
         content,
-        data || excelData || undefined,
+        selectedDataList.length > 0 ? selectedDataList : undefined,
         conversationHistory
       );
 
-      // 如果使用了数据，标记为已使用
-      if (data || excelData) {
-        const currentDataId = data ? Date.now().toString() :
-          messages.find(m => m.excelData === excelData)?.dataId;
-        if (currentDataId) {
-          setUsedDataIds(prev => new Set(prev).add(currentDataId));
-          // 将使用过的数据消息标记为不可删除
-          setMessages(prev => prev.map(m =>
-            m.dataId === currentDataId ? { ...m, isDeletable: false } : m
-          ));
-        }
+      // 标记所有使用过的数据
+      if (selectedDataList.length > 0) {
+        const usedIds = selectedDataList.map(data => data.id);
+        setUsedDataIds(prev => {
+          const newSet = new Set(prev);
+          usedIds.forEach(id => newSet.add(id));
+          return newSet;
+        });
+
+        // 清空选中的数据列表
+        setSelectedDataList([]);
       }
 
       const assistantMessage: ChatMessage = {
@@ -135,15 +134,9 @@ const App: React.FC<AppProps> = () => {
     }
   };
 
-  const handleDeleteData = (dataId: string) => {
-    // 移除包含此数据ID的消息
-    setMessages(prev => prev.filter(m => m.dataId !== dataId));
-
-    // 如果当前选中的数据就是被删除的数据，清除选中状态
-    const messageWithData = messages.find(m => m.dataId === dataId);
-    if (messageWithData && excelData === messageWithData.excelData) {
-      setExcelData(null);
-    }
+  // 简化删除函数，只需要从选中列表中移除
+  const handleRemoveSelectedData = (dataId: string) => {
+    setSelectedDataList(prev => prev.filter(data => data.id !== dataId));
   };
 
   const handleSettingsClose = () => {
@@ -161,7 +154,7 @@ const App: React.FC<AppProps> = () => {
 
   const startNewChat = () => {
     setMessages([]);
-    setExcelData(null);
+    setSelectedDataList([]); // 清空选中数据列表
     setUsedDataIds(new Set()); // 重置已使用数据ID
   };
 
@@ -303,9 +296,9 @@ const App: React.FC<AppProps> = () => {
           <ChatInterface
             messages={messages}
             onSendMessage={handleSendMessage}
-            onDeleteData={handleDeleteData}
+            onRemoveSelectedData={handleRemoveSelectedData}
             isLoading={isLoading}
-            excelData={excelData}
+            selectedDataList={selectedDataList}
           />
         )}
 

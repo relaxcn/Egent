@@ -17,18 +17,18 @@ export interface ChatMessage {
 
 interface ChatInterfaceProps {
   messages: ChatMessage[];
-  onSendMessage: (message: string, excelData?: ExcelData) => void;
-  onDeleteData?: (dataId: string) => void;  // 删除数据的回调
+  onSendMessage: (message: string) => void; // 简化，不再需要传递单个数据
+  onRemoveSelectedData?: (dataId: string) => void; // 从选中列表移除数据的回调
   isLoading: boolean;
-  excelData: ExcelData | null;
+  selectedDataList: ExcelData[]; // 改为数组
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({
   messages,
   onSendMessage,
-  onDeleteData,
+  onRemoveSelectedData,
   isLoading,
-  excelData
+  selectedDataList
 }) => {
   const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -45,7 +45,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (inputValue.trim() && !isLoading) {
-      onSendMessage(inputValue.trim(), excelData || undefined);
+      onSendMessage(inputValue.trim());
       setInputValue("");
     }
   };
@@ -171,17 +171,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               </button>
             )}
 
-            {/* Delete Button for deletable system messages */}
-            {isSystem && message.isDeletable && onDeleteData && message.dataId && (
-              <button
-                onClick={() => onDeleteData(message.dataId!)}
-                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-red-100"
-                title="删除此数据"
-              >
-                <Delete24Regular className="w-4 h-4 text-red-500 hover:text-red-700" />
-              </button>
-            )}
-
             {/* Message Text */}
             <div className="text-sm leading-relaxed">
               {isUser || isSystem ? (
@@ -293,18 +282,42 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
       {/* Input Area */}
       <div className="border-t border-gray-200 bg-white p-4">
-        {excelData && (
-          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Table24Regular className="text-blue-600" />
-                <span className="text-sm text-blue-800 font-medium">
-                  已选择数据: {excelData.address}
-                </span>
-                <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
-                  {excelData.values.length} 行
-                </span>
-              </div>
+        {/* Selected Data List */}
+        {selectedDataList.length > 0 && (
+          <div className="mb-4">
+            <div className="text-sm text-gray-600 mb-2 font-medium">
+              已选中数据 ({selectedDataList.length} 个)：
+            </div>
+            <div className="space-y-2 max-h-32 overflow-y-auto">
+              {selectedDataList.map((data) => (
+                <div
+                  key={data.id}
+                  className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg"
+                >
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <Table24Regular className="text-blue-600 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm text-blue-800 font-medium truncate">
+                        {data.address}
+                      </div>
+                      <div className="text-xs text-blue-600">
+                        {data.values.length} 行
+                        {data.headers && ` • 包含标题`}
+                        {` • ${data.timestamp.toLocaleTimeString()}`}
+                      </div>
+                    </div>
+                  </div>
+                  {onRemoveSelectedData && (
+                    <button
+                      onClick={() => onRemoveSelectedData(data.id)}
+                      className="p-1 rounded hover:bg-red-100 transition-colors flex-shrink-0"
+                      title="移除此数据"
+                    >
+                      <Delete24Regular className="w-4 h-4 text-red-500 hover:text-red-700" />
+                    </button>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         )}

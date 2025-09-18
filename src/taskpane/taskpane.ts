@@ -1,9 +1,11 @@
 /* global Excel console */
 
 export interface ExcelData {
+  id: string; // 数据唯一标识
   address: string;
   values: any[][];
   headers?: string[];
+  timestamp: Date; // 添加时间戳
 }
 
 export async function insertText(text: string) {
@@ -37,8 +39,10 @@ export async function getSelectedData(): Promise<ExcelData | null> {
       }
 
       const data: ExcelData = {
+        id: Date.now().toString(),
         address: selection.address,
         values: selection.values as any[][],
+        timestamp: new Date(),
       };
 
       // 如果选择的第一行看起来像标题行，将其作为headers
@@ -77,8 +81,10 @@ export async function getAllWorksheetData(): Promise<ExcelData | null> {
       }
 
       const data: ExcelData = {
+        id: Date.now().toString(),
         address: usedRange.address,
         values: usedRange.values as any[][],
+        timestamp: new Date(),
       };
 
       // 如果第一行看起来像标题行，将其作为headers

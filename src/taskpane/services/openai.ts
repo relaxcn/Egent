@@ -29,43 +29,60 @@ export class OpenAIService {
     });
   }
 
-  private formatExcelDataForAI(data: ExcelData): string {
-    let formatted = `Excel 数据 (${data.address}):\n`;
+  private formatExcelDataForAI(dataList: ExcelData | ExcelData[]): string {
+    const dataArray = Array.isArray(dataList) ? dataList : [dataList];
 
-    if (data.headers) {
-      formatted += `列标题: ${data.headers.join(", ")}\n`;
-      formatted += `数据 (${data.values.length} 行):\n`;
+    if (dataArray.length === 0) return "";
 
-      // 格式化为表格
-      data.values.slice(0, 20).forEach((row, index) => {
-        formatted += `行${index + 1}: `;
-        row.forEach((cell, cellIndex) => {
-          const header = data.headers![cellIndex] || `列${cellIndex + 1}`;
-          formatted += `${header}=${cell}, `;
+    let formatted =
+      dataArray.length === 1 ? `Excel 数据:\n` : `Excel 数据 (${dataArray.length} 个数据集):\n`;
+
+    dataArray.forEach((data, index) => {
+      if (dataArray.length > 1) {
+        formatted += `\n### 数据集 ${index + 1}: ${data.address}\n`;
+      } else {
+        formatted += `数据来源: ${data.address}\n`;
+      }
+
+      if (data.headers) {
+        formatted += `列标题: ${data.headers.join(", ")}\n`;
+        formatted += `数据 (${data.values.length} 行):\n`;
+
+        // 格式化为表格
+        data.values.slice(0, 20).forEach((row, rowIndex) => {
+          formatted += `行${rowIndex + 1}: `;
+          row.forEach((cell, cellIndex) => {
+            const header = data.headers![cellIndex] || `列${cellIndex + 1}`;
+            formatted += `${header}=${cell}, `;
+          });
+          formatted += "\n";
         });
+
+        if (data.values.length > 20) {
+          formatted += `... (还有 ${data.values.length - 20} 行数据)\n`;
+        }
+      } else {
+        formatted += `数据 (${data.values.length} 行 x ${data.values[0]?.length || 0} 列):\n`;
+        data.values.slice(0, 10).forEach((row, rowIndex) => {
+          formatted += `行${rowIndex + 1}: [${row.join(", ")}]\n`;
+        });
+
+        if (data.values.length > 10) {
+          formatted += `... (还有 ${data.values.length - 10} 行数据)\n`;
+        }
+      }
+
+      if (dataArray.length > 1 && index < dataArray.length - 1) {
         formatted += "\n";
-      });
-
-      if (data.values.length > 20) {
-        formatted += `... (还有 ${data.values.length - 20} 行数据)\n`;
       }
-    } else {
-      formatted += `数据 (${data.values.length} 行 x ${data.values[0]?.length || 0} 列):\n`;
-      data.values.slice(0, 10).forEach((row, index) => {
-        formatted += `行${index + 1}: [${row.join(", ")}]\n`;
-      });
-
-      if (data.values.length > 10) {
-        formatted += `... (还有 ${data.values.length - 10} 行数据)\n`;
-      }
-    }
+    });
 
     return formatted;
   }
 
   async sendMessage(
     userMessage: string,
-    excelData?: ExcelData,
+    excelData?: ExcelData | ExcelData[],
     conversationHistory: ChatMessage[] = []
   ): Promise<ApiResponse> {
     try {
