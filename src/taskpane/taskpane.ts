@@ -110,9 +110,33 @@ export async function getAllWorksheetData(): Promise<ExcelData | null> {
 export async function selectRangeByAddress(address: string): Promise<boolean> {
   try {
     return await Excel.run(async (context) => {
-      const sheet = context.workbook.worksheets.getActiveWorksheet();
-      const range = sheet.getRange(address);
+      let sheetName: string;
+      let rangeAddress: string;
+
+      // 检查地址是否包含工作表名称 (格式: Sheet1!A1:B2)
+      if (address.includes("!")) {
+        const parts = address.split("!");
+        sheetName = parts[0];
+        rangeAddress = parts[1];
+      } else {
+        // 如果没有工作表名称，使用当前激活的工作表
+        const activeSheet = context.workbook.worksheets.getActiveWorksheet();
+        activeSheet.load("name");
+        await context.sync();
+        sheetName = activeSheet.name;
+        rangeAddress = address;
+      }
+
+      // 获取指定的工作表
+      const sheet = context.workbook.worksheets.getItem(sheetName);
+
+      // 激活工作表
+      sheet.activate();
+
+      // 选择范围
+      const range = sheet.getRange(rangeAddress);
       range.select();
+
       await context.sync();
       return true;
     });
