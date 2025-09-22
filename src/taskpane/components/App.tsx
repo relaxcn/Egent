@@ -32,6 +32,30 @@ const App: React.FC<AppProps> = () => {
     if (validation.valid) {
       setCurrentView('chat');
     }
+
+    // // Disable right-click context menu
+    // const handleContextMenu = (e: MouseEvent) => {
+    //   e.preventDefault();
+    //   return false;
+    // };
+
+    // // Disable F12 developer tools
+    // const handleKeyDown = (e: KeyboardEvent) => {
+    //   if (e.key === 'F12') {
+    //     e.preventDefault();
+    //     return false;
+    //   }
+    //   return true;
+    // };
+
+    // document.addEventListener('contextmenu', handleContextMenu);
+    // document.addEventListener('keydown', handleKeyDown);
+
+    // // Cleanup
+    // return () => {
+    //   document.removeEventListener('contextmenu', handleContextMenu);
+    //   document.removeEventListener('keydown', handleKeyDown);
+    // };
   }, []);
 
   const handleReadExcelData = async (readAll: boolean = false) => {
@@ -72,11 +96,16 @@ const App: React.FC<AppProps> = () => {
   };
 
   const handleSendMessage = async (content: string) => {
+    const usedDataSnapshot = selectedDataList.length > 0
+      ? selectedDataList.map((data) => ({ ...data }))
+      : undefined;
+
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       type: 'user',
       content,
       timestamp: new Date(),
+      attachedData: usedDataSnapshot,
     };
 
     setMessages(prev => [...prev, userMessage]);
@@ -95,13 +124,13 @@ const App: React.FC<AppProps> = () => {
       // 使用所有选中的数据
       const response = await openAIService.sendMessage(
         content,
-        selectedDataList.length > 0 ? selectedDataList : undefined,
+        usedDataSnapshot,
         conversationHistory
       );
 
       // 标记所有使用过的数据
-      if (selectedDataList.length > 0) {
-        const usedIds = selectedDataList.map(data => data.id);
+      if (usedDataSnapshot && usedDataSnapshot.length > 0) {
+        const usedIds = usedDataSnapshot.map(data => data.id);
         setUsedDataIds(prev => {
           const newSet = new Set(prev);
           usedIds.forEach(id => newSet.add(id));

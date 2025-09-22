@@ -6,6 +6,7 @@ export interface ExcelData {
   values: any[][];
   headers?: string[];
   timestamp: Date; // 添加时间戳
+  sourceType?: "excel" | "file" | "text";
 }
 
 export async function insertText(text: string) {
@@ -43,6 +44,7 @@ export async function getSelectedData(): Promise<ExcelData | null> {
         address: selection.address,
         values: selection.values as any[][],
         timestamp: new Date(),
+        sourceType: "excel",
       };
 
       // 如果选择的第一行看起来像标题行，将其作为headers
@@ -85,6 +87,7 @@ export async function getAllWorksheetData(): Promise<ExcelData | null> {
         address: usedRange.address,
         values: usedRange.values as any[][],
         timestamp: new Date(),
+        sourceType: "excel",
       };
 
       // 如果第一行看起来像标题行，将其作为headers

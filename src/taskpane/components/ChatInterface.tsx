@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useState, useRef, useEffect } from "react";
-import { Send24Regular, Table24Regular, Person24Regular, Bot24Regular, Copy24Regular, Delete24Regular } from "@fluentui/react-icons";
+import { Send24Regular, Table24Regular, Person24Regular, Bot24Regular, Delete24Regular, Document24Regular, ChevronDown24Regular, ChevronUp24Regular } from "@fluentui/react-icons";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ExcelData } from "../taskpane";
@@ -12,6 +12,7 @@ export interface ChatMessage {
   content: string;
   timestamp: Date;
   excelData?: ExcelData;
+  attachedData?: ExcelData[];  // 本次消息关联的 Excel 数据
   isDeletable?: boolean;  // 是否可以删除
   dataId?: string;        // 数据的唯一标识
 }
@@ -35,7 +36,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 }) => {
   const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+  const [collapsedData, setCollapsedData] = useState<{[key: string]: boolean}>({});
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -53,13 +54,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   };
 
-  const handleCopyMessage = async (content: string, messageId: string) => {
-    try {
-      await navigator.clipboard.writeText(content);
-      setCopiedMessageId(messageId);
-      setTimeout(() => setCopiedMessageId(null), 2000);
-    } catch (err) {
-      console.error('Failed to copy text: ', err);
+  const getDataTypeIcon = (dataType: string) => {
+    switch (dataType) {
+      case 'excel':
+        return <Table24Regular className="w-4 h-4" />;
+      case 'file':
+        return <Document24Regular className="w-4 h-4" />;
+      default:
+        return <Table24Regular className="w-4 h-4" />;
     }
   };
 
@@ -122,84 +124,134 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     );
   };
 
+  const renderAttachedDataList = (
+    dataList: ExcelData[],
+    messageId: string,
+    isUserMessage: boolean
+  ) => {
+    if (!dataList || dataList.length === 0) {
+      return null;
+    }
+
+    const dataKey = `${messageId}-data`;
+    const isExpanded = collapsedData[dataKey] ?? false;
+
+    const buttonClass = isUserMessage
+      ? "bg-white/15 border-white/30 hover:bg-white/25 text-blue-50"
+      : "bg-blue-50 border-blue-200 hover:bg-blue-100 text-blue-800";
+    const iconColor = isUserMessage ? "text-blue-50" : "text-blue-600";
+    const rangeItemClass = isUserMessage
+      ? "bg-white/10 border-white/20 hover:bg-white/20 text-blue-50"
+      : "bg-white border-blue-100 hover:bg-blue-50 text-blue-700";
+
+    return (
+      <div className="mt-4">
+        {/* Collapsed state: single button showing data usage */}
+        <button
+          type="button"
+          onClick={() => setCollapsedData(prev => ({
+            ...prev,
+            [dataKey]: !prev[dataKey]
+          }))}
+          className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border transition-all shadow-sm ${buttonClass}`}
+          title={isExpanded ? "折叠数据引用" : "展开查看使用的数据"}
+        >
+          <div className="flex items-center gap-3">
+            <div className={`flex-shrink-0 ${iconColor}`}>
+              {getDataTypeIcon('excel')}
+            </div>
+            <div className="text-sm font-medium">
+              使用了 {dataList.length} 个数据源
+            </div>
+          </div>
+          <div className={`${iconColor}`}>
+            {isExpanded ?
+              <ChevronUp24Regular className="w-4 h-4" /> :
+              <ChevronDown24Regular className="w-4 h-4" />
+            }
+          </div>
+        </button>
+
+        {/* Expanded state: list of data ranges */}
+        {isExpanded && (
+          <div className="mt-2 space-y-1 pl-4">
+            {dataList.map((data, index) => (
+              <button
+                key={`${messageId}-${data.id ?? index}`}
+                type="button"
+                onClick={() => onSelectExcelRange?.(data.address)}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg border transition-all text-left ${rangeItemClass}`}
+                title={`点击在Excel中高亮选中 ${data.address}`}
+              >
+                <div className={`flex-shrink-0 ${iconColor}`}>
+                  {getDataTypeIcon('excel')}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium truncate">{data.address}</div>
+                  <div className="text-xs opacity-75">
+                    {`${data.values.length} 行`}
+                    {data.headers ? " · 含标题" : ""}
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderMessage = (message: ChatMessage) => {
     const isUser = message.type === 'user';
     const isSystem = message.type === 'system';
 
-    return (
-      <div
-        key={message.id}
-        className={`flex gap-4 ${isUser ? 'flex-row-reverse' : 'flex-row'} mb-6`}
-      >
-        {/* Avatar */}
-        <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center shadow-sm ${
-          isUser
-            ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white'
-            : isSystem
-            ? 'bg-gradient-to-br from-yellow-400 to-yellow-500 text-white'
-            : 'bg-gradient-to-br from-green-500 to-green-600 text-white'
-        }`}>
-          {isUser ? (
-            <Person24Regular className="w-5 h-5" />
-          ) : isSystem ? (
-            <Table24Regular className="w-5 h-5" />
-          ) : (
-            <Bot24Regular className="w-5 h-5" />
-          )}
-        </div>
-
-        {/* Message Content */}
-        <div className={`flex-1 max-w-[75%] ${
-          isUser ? 'text-right' : 'text-left'
-        }`}>
-          {/* Message Bubble */}
-          <div className={`group relative inline-block max-w-full ${
-            isUser
-              ? 'bg-blue-600 text-white rounded-2xl rounded-br-md'
-              : isSystem
-              ? 'bg-yellow-100 text-yellow-800 border border-yellow-200 rounded-2xl'
-              : 'bg-white text-gray-800 border border-gray-200 rounded-2xl rounded-bl-md shadow-sm'
-          } px-4 py-3`}>
-
-            {/* Copy Button for AI messages */}
-            {!isUser && !isSystem && (
-              <button
-                onClick={() => handleCopyMessage(message.content, message.id)}
-                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-gray-100"
-                title="复制消息"
-              >
-                <Copy24Regular className={`w-4 h-4 ${
-                  copiedMessageId === message.id ? 'text-green-600' : 'text-gray-500'
-                }`} />
-              </button>
+    if (isUser) {
+      // 用户消息：蓝色气泡，右对齐
+      return (
+        <div key={message.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', marginBottom: '16px' }}>
+          {/* 蓝色气泡 */}
+          <div style={{
+            maxWidth: '75%',
+            backgroundColor: '#3b82f6',
+            color: 'white',
+            padding: '12px 16px',
+            borderRadius: '16px 16px 4px 16px',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+          }}>
+            <div style={{ fontSize: '14px', whiteSpace: 'pre-wrap' }}>{message.content}</div>
+          </div>
+          {/* 引用的数据 - 在气泡外面，紧跟下方 */}
+          {message.attachedData &&
+            message.attachedData.length > 0 && (
+              <div style={{ marginTop: '4px', maxWidth: '75%' }}>
+                {renderAttachedDataList(message.attachedData, message.id, isUser)}
+              </div>
             )}
-
-            {/* Message Text */}
-            <div className="text-sm leading-relaxed">
-              {isUser || isSystem ? (
-                // 用户和系统消息直接显示文本
-                <div className="whitespace-pre-wrap">{message.content}</div>
-              ) : (
-                // AI消息使用 Markdown 渲染
-                <div className="markdown-content">
-                  <Markdown remarkPlugins={[remarkGfm]}>{message.content}</Markdown>
-                </div>
-              )}
+        </div>
+      );
+    } else if (isSystem) {
+      // 系统消息：黄色背景
+      return (
+        <div key={message.id} className="flex justify-center mb-4">
+          <div className="max-w-[85%] bg-yellow-50 text-yellow-800 border border-yellow-200 px-4 py-3 rounded-lg text-center">
+            <div className="text-sm">{message.content}</div>
+          </div>
+        </div>
+      );
+    } else {
+      // AI回复：无气泡，左对齐，纯文本
+      return (
+        <div key={message.id} className="flex justify-start mb-6">
+          <div className="max-w-[85%] text-gray-800">
+            <div className="markdown-content">
+              <Markdown remarkPlugins={[remarkGfm]}>{message.content}</Markdown>
             </div>
-
             {/* Excel Data Display */}
             {message.excelData && formatExcelData(message.excelData)}
           </div>
-
-          {/* Timestamp */}
-          <div className={`text-xs text-gray-500 mt-2 ${
-            isUser ? 'text-right' : 'text-left'
-          }`}>
-            {message.timestamp.toLocaleTimeString()}
-          </div>
         </div>
-      </div>
-    );
+      );
+    }
   };
 
   return (
