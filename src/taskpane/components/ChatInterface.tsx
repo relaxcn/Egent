@@ -15,6 +15,7 @@ export interface ChatMessage {
   attachedData?: ExcelData[];  // 本次消息关联的 Excel 数据
   isDeletable?: boolean;  // 是否可以删除
   dataId?: string;        // 数据的唯一标识
+  isStreaming?: boolean;  // 是否正在流式输出
 }
 
 interface ChatInterfaceProps {
@@ -244,7 +245,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         <div key={message.id} className="flex justify-start mb-6">
           <div className="max-w-[85%] text-gray-800">
             <div className="markdown-content">
-              <Markdown remarkPlugins={[remarkGfm]}>{message.content}</Markdown>
+              <Markdown remarkPlugins={[remarkGfm]}>
+                {message.content}
+              </Markdown>
+              {message.isStreaming && (
+                <span className="streaming-cursor">▋</span>
+              )}
             </div>
             {/* Excel Data Display */}
             {message.excelData && formatExcelData(message.excelData)}

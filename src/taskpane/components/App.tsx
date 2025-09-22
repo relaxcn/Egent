@@ -4,7 +4,7 @@ import { Settings24Regular, Chat24Regular, Table24Regular, Home24Regular } from 
 import ChatInterface, { ChatMessage } from "./ChatInterface";
 import Settings from "./Settings";
 import { getSelectedData, getAllWorksheetData, ExcelData, selectRangeByAddress } from "../taskpane";
-import { OpenAIService } from "../services/openai";
+import { OpenAIService, StreamCallback } from "../services/openai";
 import { getApiSettings, validateApiSettings } from "../utils/settings";
 
 interface AppProps {
@@ -111,6 +111,18 @@ const App: React.FC<AppProps> = () => {
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
 
+    // 创建初始的助手消息（空内容，标记为streaming）
+    const assistantMessageId = (Date.now() + 1).toString();
+    const assistantMessage: ChatMessage = {
+      id: assistantMessageId,
+      type: 'assistant',
+      content: '',
+      timestamp: new Date(),
+      isStreaming: true
+    };
+
+    setMessages(prev => [...prev, assistantMessage]);
+
     try {
       const settings = getApiSettings();
       const openAIService = new OpenAIService(settings);
@@ -121,44 +133,61 @@ const App: React.FC<AppProps> = () => {
         content: m.content
       }));
 
-      // 使用所有选中的数据
-      const response = await openAIService.sendMessage(
+      // 创建流式回调
+      const streamCallbacks: StreamCallback = {
+        onChunk: (chunk: string) => {
+          setMessages(prev => prev.map(msg =>
+            msg.id === assistantMessageId
+              ? { ...msg, content: msg.content + chunk }
+              : msg
+          ));
+        },
+        onComplete: () => {
+          setMessages(prev => prev.map(msg =>
+            msg.id === assistantMessageId
+              ? { ...msg, isStreaming: false }
+              : msg
+          ));
+          setIsLoading(false);
+
+          // 标记所有使用过的数据
+          if (usedDataSnapshot && usedDataSnapshot.length > 0) {
+            const usedIds = usedDataSnapshot.map(data => data.id);
+            setUsedDataIds(prev => {
+              const newSet = new Set(prev);
+              usedIds.forEach(id => newSet.add(id));
+              return newSet;
+            });
+
+            // 清空选中的数据列表
+            setSelectedDataList([]);
+          }
+        },
+        onError: (error: string) => {
+          setMessages(prev => prev.map(msg =>
+            msg.id === assistantMessageId
+              ? { ...msg, content: `错误: ${error}`, isStreaming: false }
+              : msg
+          ));
+          setIsLoading(false);
+        }
+      };
+
+      // 使用流式发送消息
+      await openAIService.sendMessageStream(
         content,
+        streamCallbacks,
         usedDataSnapshot,
         conversationHistory
       );
 
-      // 标记所有使用过的数据
-      if (usedDataSnapshot && usedDataSnapshot.length > 0) {
-        const usedIds = usedDataSnapshot.map(data => data.id);
-        setUsedDataIds(prev => {
-          const newSet = new Set(prev);
-          usedIds.forEach(id => newSet.add(id));
-          return newSet;
-        });
-
-        // 清空选中的数据列表
-        setSelectedDataList([]);
-      }
-
-      const assistantMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        type: 'assistant',
-        content: response.success ? response.message! : `错误: ${response.error}`,
-        timestamp: new Date()
-      };
-
-      setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       console.error('Error sending message:', error);
-      const errorMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        type: 'assistant',
-        content: '抱歉，发送消息时出现错误，请检查网络连接和 API 配置',
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, errorMessage]);
-    } finally {
+      setMessages(prev => prev.map(msg =>
+        msg.id === assistantMessageId
+          ? { ...msg, content: '抱歉，发送消息时出现错误，请检查网络连接和 API 配置', isStreaming: false }
+          : msg
+      ));
       setIsLoading(false);
     }
   };

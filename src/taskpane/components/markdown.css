@@ -67,3 +67,18 @@
 .markdown-content p {
   margin: 0.75rem 0;
 }
+
+/* 流式输出光标动画 */
+.streaming-cursor {
+  animation: blink 1s infinite;
+  color: #3b82f6;
+}
+
+@keyframes blink {
+  0%, 50% {
+    opacity: 1;
+  }
+  51%, 100% {
+    opacity: 0;
+  }
+}
