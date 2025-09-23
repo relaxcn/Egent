@@ -36,6 +36,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 }) => {
   const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [collapsedData, setCollapsedData] = useState<{[key: string]: boolean}>({});
 
   const scrollToBottom = () => {
@@ -46,11 +47,47 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     scrollToBottom();
   }, [messages]);
 
+  // 自动调整输入框高度
+  useEffect(() => {
+    if (textareaRef.current) {
+      const textarea = textareaRef.current;
+
+      // 先重置高度以正确计算scrollHeight
+      textarea.style.height = 'auto';
+
+      // 获取内容的实际高度
+      const scrollHeight = textarea.scrollHeight;
+      const minHeight = 35; // 与CSS中的min-height保持一致
+      const maxHeight = 200; // 与CSS中的max-height保持一致
+
+      // 计算新高度，确保在最小和最大高度之间
+      const newHeight = Math.max(minHeight, Math.min(scrollHeight, maxHeight));
+      textarea.style.height = newHeight + 'px';
+
+      // 如果内容超过最大高度，显示滚动条
+      if (scrollHeight > maxHeight) {
+        textarea.style.overflowY = 'auto';
+      } else {
+        textarea.style.overflowY = 'hidden';
+      }
+    }
+  }, [inputValue]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (inputValue.trim() && !isLoading) {
       onSendMessage(inputValue.trim());
       setInputValue("");
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (inputValue.trim() && !isLoading) {
+        onSendMessage(inputValue.trim());
+        setInputValue("");
+      }
     }
   };
 
@@ -252,7 +289,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             <div className="card w-20 h-20 mx-auto mb-4 flex items-center justify-center">
               <Bot24Regular className="text-3xl text-blue-600" />
             </div>
-            <h3 className="welcome-title text-lg mb-2">开始与 Excel Agent 对话</h3>
+            <h3 className="welcome-title mb-3">开始与 Excel Agent 对话</h3>
             <p className="welcome-description">选择 Excel 数据后开始智能分析对话</p>
           </div>
         )}
@@ -334,24 +371,22 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         )}
 
         <form onSubmit={handleSubmit} className="relative">
-          <div className="flex gap-4 items-end">
-            <div className="flex-1 relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 rounded-2xl blur-sm"></div>
+          <div className="chat-form-container">
+            <div className="chat-input-wrapper">
+              <div className="chat-input-container-background"></div>
               <div className="relative">
-                <input
-                  type="text"
+                <textarea
+                  ref={textareaRef}
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
-                  placeholder="输入您的问题或指令..."
+                  onKeyDown={handleKeyDown}
+                  placeholder="输入您的问题或指令... (Shift+Enter 换行)"
                   disabled={isLoading}
-                  className="input px-6 py-4 pr-14 rounded-2xl bg-white/90 backdrop-blur-sm text-base"
-                  style={{
-                    minHeight: '56px',
-                    boxShadow: '0 4px 20px rgba(59, 130, 246, 0.15), 0 1px 3px rgba(0, 0, 0, 0.1)'
-                  }}
+                  rows={1}
+                  className="chat-input"
                 />
                 {/* 输入框内的装饰元素 */}
-                <div className="absolute right-4 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
+                <div className="chat-input-decorations">
                   {isLoading && (
                     <div className="flex space-x-1">
                       <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce"></div>
@@ -366,29 +401,21 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             <button
               type="submit"
               disabled={!inputValue.trim() || isLoading}
-              className="button button-primary group relative px-6 py-4 rounded-2xl flex items-center gap-3 disabled:hover:translate-y-0"
-              style={{
-                minHeight: '56px',
-                background: inputValue.trim() && !isLoading
-                  ? 'linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)'
-                  : undefined
-              }}
+              className={`chat-send-button ${
+                inputValue.trim() && !isLoading ? 'chat-send-button-active' : 'button button-primary'
+              }`}
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <Send24Regular className="w-5 h-5 relative z-10 hover-scale" />
-              <span className="hidden sm:inline relative z-10">发送</span>
               {inputValue.trim() && !isLoading && (
-                <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl blur opacity-30 group-hover:opacity-50 transition-opacity duration-300"></div>
+                <>
+                  <div className="chat-send-button-glow"></div>
+                  <div className="chat-send-button-highlight"></div>
+                </>
               )}
+              <div className="chat-send-button-content">
+                <Send24Regular className="w-5 h-5 hover-scale" />
+                <span className="hidden sm:inline">发送</span>
+              </div>
             </button>
-          </div>
-
-          {/* 底部提示文字 */}
-          <div className="mt-3 text-xs text-gray-500 text-center">
-            <span className="inline-flex items-center gap-1">
-              按 Enter 发送消息
-              <kbd className="px-2 py-1 bg-gray-100 border border-gray-200 rounded text-xs">⏎</kbd>
-            </span>
           </div>
         </form>
       </div>
