@@ -1,0 +1,198 @@
+/* Markdown 样式：整体排版 */
+/* Markdown 样式：整体排版 */
+.markdown-content {
+  max-width: none;
+  color: #0f172a;
+  line-height: 1.75;
+  font-size: 0.95rem;
+  word-break: break-word;
+}
+
+.markdown-content p {
+  margin: 0.75rem 0;
+}
+
+.markdown-content a {
+  color: #2563eb;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(37, 99, 235, 0.3);
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.markdown-content a:hover {
+  color: #1d4ed8;
+  border-color: rgba(37, 99, 235, 0.55);
+}
+
+/* 标题层级 */
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4,
+.markdown-content h5,
+.markdown-content h6 {
+  color: #111827;
+  font-weight: 600;
+  line-height: 1.35;
+  margin: 1.8rem 0 0.9rem;
+}
+
+.markdown-content h1 {
+  font-size: 1.75rem;
+  letter-spacing: -0.02em;
+}
+
+.markdown-content h2 {
+  font-size: 1.4rem;
+}
+
+.markdown-content h3 {
+  font-size: 1.2rem;
+}
+
+/* 列表排版 */
+.markdown-content ul,
+.markdown-content ol {
+  padding-left: 1.5rem;
+  margin: 1rem 0;
+}
+
+.markdown-content li + li {
+  margin-top: 0.35rem;
+}
+
+.markdown-content ul li {
+  list-style-type: disc;
+}
+
+.markdown-content ol li {
+  list-style-type: decimal;
+}
+
+/* 引用块 */
+.markdown-content blockquote {
+  margin: 1.25rem 0;
+  padding: 1rem 1.25rem;
+  border-left: 4px solid rgba(37, 99, 235, 0.8);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(96, 165, 250, 0.05));
+  border-radius: 0.5rem;
+  color: #1e3a8a;
+}
+
+/* 代码与预格式文本 */
+.markdown-content code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 0.9rem;
+  background: #f1f5f9;
+  color: #0f172a;
+  padding: 0.1rem 0.4rem;
+  border-radius: 0.35rem;
+  border: 1px solid #e2e8f0;
+}
+
+.markdown-content pre {
+  margin: 1.35rem 0;
+  padding: 1.25rem 1.5rem;
+  background: #0f172a;
+  color: #f8fafc;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(15, 23, 42, 0.85);
+  overflow-x: auto;
+  box-shadow: 0 16px 30px -12px rgba(15, 23, 42, 0.45);
+}
+
+.markdown-content pre code {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  padding: 0;
+  font-size: 0.9rem;
+}
+
+/* 水平分割线 */
+.markdown-content hr {
+  border: 0;
+  border-top: 1px solid #e2e8f0;
+  margin: 2rem 0;
+}
+
+/* 表格样式 */
+.markdown-content table {
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+  margin: 1.5rem 0;
+  background: #ffffff;
+  border-radius: 0.75rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 12px 24px -16px rgba(15, 23, 42, 0.4);
+  overflow: hidden;
+}
+
+.markdown-content table caption {
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  text-align: left;
+  color: #1f2937;
+  background: #f8fafc;
+}
+
+.markdown-content table thead {
+  background: linear-gradient(135deg, #f8fafc, #e8f1ff);
+  color: #0f172a;
+  text-transform: none;
+}
+
+.markdown-content table th,
+.markdown-content table td {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  border-right: 1px solid #e2e8f0;
+  text-align: left;
+  vertical-align: middle;
+  font-size: 0.95rem;
+}
+
+.markdown-content table th:last-child,
+.markdown-content table td:last-child {
+  border-right: none;
+}
+
+.markdown-content table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.markdown-content table tbody tr:nth-child(even) {
+  background: #f8fafc;
+}
+
+.markdown-content table tbody tr:hover {
+  background: rgba(37, 99, 235, 0.08);
+}
+
+@media (max-width: 768px) {
+  /* 小屏幕下允许表格横向滚动 */
+  .markdown-content table {
+    display: block;
+    overflow-x: auto;
+  }
+
+  .markdown-content table thead,
+  .markdown-content table tbody,
+  .markdown-content table tr {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+  }
+}
+
+/* 强调文本 */
+.markdown-content strong {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.markdown-content em {
+  color: #475569;
+  font-style: italic;
+}

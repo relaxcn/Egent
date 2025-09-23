@@ -4,7 +4,6 @@ import { Send24Regular, Table24Regular, Person24Regular, Bot24Regular, Delete24R
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ExcelData } from "../taskpane";
-import "./markdown.css";
 
 export interface ChatMessage {
   id: string;
@@ -71,7 +70,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     const maxColumnsToShow = 4;
 
     return (
-      <div className="mt-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+      <div className="data-card">
         <div className="flex items-center gap-2 mb-3">
           <Table24Regular className="text-blue-600" />
           <span className="text-sm font-medium text-blue-800">
@@ -80,40 +79,38 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
 
         <div className="overflow-x-auto">
-          <table className="min-w-full text-xs border-collapse">
+          <table className="data-table">
             {data.headers && (
               <thead>
                 <tr className="border-b border-blue-200">
                   {data.headers.slice(0, maxColumnsToShow).map((header, index) => (
-                    <th key={index} className="text-left py-2 px-3 font-medium text-blue-800 bg-blue-100">
+                    <th key={index} className="data-table-header">
                       {header}
                     </th>
                   ))}
                   {data.headers.length > maxColumnsToShow && (
-                    <th className="text-left py-2 px-3 font-medium text-blue-800 bg-blue-100">...</th>
+                    <th className="data-table-header">...</th>
                   )}
                 </tr>
               </thead>
             )}
             <tbody>
               {data.values.slice(0, maxRowsToShow).map((row, rowIndex) => (
-                <tr key={rowIndex} className={`border-b border-blue-100 ${
-                  rowIndex % 2 === 0 ? "bg-white" : "bg-blue-25"
-                }`}>
+                <tr key={rowIndex} className={rowIndex % 2 === 0 ? "data-table-row-even" : "data-table-row-odd"}>
                   {row.slice(0, maxColumnsToShow).map((cell, cellIndex) => (
-                    <td key={cellIndex} className="py-2 px-3 text-gray-700">
+                    <td key={cellIndex} className="data-table-cell">
                       {String(cell)}
                     </td>
                   ))}
                   {row.length > maxColumnsToShow && (
-                    <td className="py-2 px-3 text-gray-500">...</td>
+                    <td className="data-table-cell text-gray-500">...</td>
                   )}
                 </tr>
               ))}
               {data.values.length > maxRowsToShow && (
                 <tr>
                   <td colSpan={Math.min(data.values[0]?.length || 1, maxColumnsToShow + 1)}
-                      className="py-2 px-3 text-center text-gray-500 text-xs bg-blue-50">
+                      className="data-table-cell text-center text-gray-500 text-xs bg-blue-50">
                     ... 还有 {data.values.length - maxRowsToShow} 行
                   </td>
                 </tr>
@@ -136,60 +133,51 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
     const dataKey = `${messageId}-data`;
     const isExpanded = collapsedData[dataKey] ?? false;
-
-    const buttonClass = isUserMessage
-      ? "bg-white/15 border-white/30 hover:bg-white/25 text-blue-50"
-      : "bg-blue-50 border-blue-200 hover:bg-blue-100 text-blue-800";
-    const iconColor = isUserMessage ? "text-blue-50" : "text-blue-600";
-    const rangeItemClass = isUserMessage
-      ? "bg-white/10 border-white/20 hover:bg-white/20 text-blue-50"
-      : "bg-white border-blue-100 hover:bg-blue-50 text-blue-700";
+    const variantClass = isUserMessage ? "data-attachments-user" : "data-attachments-assistant";
 
     return (
-      <div className="mt-4">
-        {/* Collapsed state: single button showing data usage */}
+      <div className={`data-attachments ${variantClass}`}>
         <button
           type="button"
           onClick={() => setCollapsedData(prev => ({
             ...prev,
             [dataKey]: !prev[dataKey]
           }))}
-          className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border transition-all shadow-sm ${buttonClass}`}
+          className="data-attachments-toggle"
           title={isExpanded ? "折叠数据引用" : "展开查看使用的数据"}
         >
-          <div className="flex items-center gap-3">
-            <div className={`flex-shrink-0 ${iconColor}`}>
+          <div className="data-attachments-toggle-main">
+            <div className="data-attachments-icon">
               {getDataTypeIcon('excel')}
             </div>
-            <div className="text-sm font-medium">
+            <div className="data-attachments-label">
               使用了 {dataList.length} 个数据源
             </div>
           </div>
-          <div className={`${iconColor}`}>
+          <div className="data-attachments-chevron">
             {isExpanded ?
-              <ChevronUp24Regular className="w-4 h-4" /> :
-              <ChevronDown24Regular className="w-4 h-4" />
+              <ChevronUp24Regular className="data-attachments-chevron-icon" /> :
+              <ChevronDown24Regular className="data-attachments-chevron-icon" />
             }
           </div>
         </button>
 
-        {/* Expanded state: list of data ranges */}
         {isExpanded && (
-          <div className="mt-2 space-y-1 pl-4">
+          <div className="data-attachments-list">
             {dataList.map((data, index) => (
               <button
                 key={`${messageId}-${data.id ?? index}`}
                 type="button"
                 onClick={() => onSelectExcelRange?.(data.address)}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg border transition-all text-left ${rangeItemClass}`}
+                className="data-attachments-item"
                 title={`点击在Excel中高亮选中 ${data.address}`}
               >
-                <div className={`flex-shrink-0 ${iconColor}`}>
+                <div className="data-attachments-icon">
                   {getDataTypeIcon('excel')}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium truncate">{data.address}</div>
-                  <div className="text-xs opacity-75">
+                <div className="data-attachments-item-text">
+                  <div className="data-attachments-item-title">{data.address}</div>
+                  <div className="data-attachments-item-meta">
                     {`${data.values.length} 行`}
                     {data.headers ? " · 含标题" : ""}
                   </div>
@@ -202,6 +190,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     );
   };
 
+
   const renderMessage = (message: ChatMessage) => {
     const isUser = message.type === 'user';
     const isSystem = message.type === 'system';
@@ -209,32 +198,26 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     if (isUser) {
       // 用户消息：蓝色气泡，右对齐
       return (
-        <div key={message.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', marginBottom: '16px' }}>
-          {/* 蓝色气泡 */}
-          <div style={{
-            maxWidth: '75%',
-            backgroundColor: '#3b82f6',
-            color: 'white',
-            padding: '12px 16px',
-            borderRadius: '16px 16px 4px 16px',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-          }}>
-            <div style={{ fontSize: '14px', whiteSpace: 'pre-wrap' }}>{message.content}</div>
+        <div key={message.id} className="message-user slide-in-right">
+          <div className="message-user-content">
+            <div className="message-bubble message-bubble-user">
+              <div className="text-sm whitespace-pre-wrap">{message.content}</div>
+            </div>
+            {message.attachedData &&
+              message.attachedData.length > 0 && (
+                <div className="message-user-attachments">
+                  {renderAttachedDataList(message.attachedData, message.id, isUser)}
+                </div>
+              )}
           </div>
-          {/* 引用的数据 - 在气泡外面，紧跟下方 */}
-          {message.attachedData &&
-            message.attachedData.length > 0 && (
-              <div style={{ marginTop: '4px', maxWidth: '75%' }}>
-                {renderAttachedDataList(message.attachedData, message.id, isUser)}
-              </div>
-            )}
         </div>
       );
     } else if (isSystem) {
+
       // 系统消息：黄色背景
       return (
-        <div key={message.id} className="flex justify-center mb-4">
-          <div className="max-w-[85%] bg-yellow-50 text-yellow-800 border border-yellow-200 px-4 py-3 rounded-lg text-center">
+        <div key={message.id} className="message-system fade-in">
+          <div className="message-bubble message-bubble-system text-center">
             <div className="text-sm">{message.content}</div>
           </div>
         </div>
@@ -242,8 +225,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     } else {
       // AI回复：无气泡，左对齐，纯文本
       return (
-        <div key={message.id} className="flex justify-start mb-6">
-          <div className="max-w-[85%] text-gray-800">
+        <div key={message.id} className="message-assistant slide-in-left">
+          <div className="message-bubble message-bubble-assistant">
             <div className="markdown-content">
               <Markdown remarkPlugins={[remarkGfm]}>
                 {message.content}
@@ -261,16 +244,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-b from-gray-50 to-white">
+    <div className="chat-container">
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="chat-messages">
         {messages.length === 0 && (
-          <div className="text-center text-gray-500 mt-16">
-            <div className="bg-white rounded-full w-20 h-20 mx-auto mb-4 flex items-center justify-center shadow-lg">
+          <div className="text-center text-gray-500 mt-16 fade-in">
+            <div className="card w-20 h-20 mx-auto mb-4 flex items-center justify-center">
               <Bot24Regular className="text-3xl text-blue-600" />
             </div>
-            <h3 className="text-lg font-medium text-gray-700 mb-2">开始与 Excel Agent 对话</h3>
-            <p className="text-sm">选择 Excel 数据后开始智能分析对话</p>
+            <h3 className="welcome-title text-lg mb-2">开始与 Excel Agent 对话</h3>
+            <p className="welcome-description">选择 Excel 数据后开始智能分析对话</p>
           </div>
         )}
 
@@ -301,44 +284,47 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       </div>
 
       {/* Input Area */}
-      <div className="border-t border-gray-200 bg-white p-4">
+      <div className="chat-input-container">
         {/* Selected Data List */}
         {selectedDataList.length > 0 && (
-          <div className="mb-4">
-            <div className="text-sm text-gray-600 mb-2 font-medium">
-              已选中数据 ({selectedDataList.length} 个)：
+          <div className="mb-6">
+            <div className="label flex items-center gap-2">
+              <div className="w-2 h-2 bg-blue-500 rounded-full pulse"></div>
+              已选中数据 ({selectedDataList.length} 个)
             </div>
-            <div className="space-y-2 max-h-32 overflow-y-auto">
+            <div className="space-y-3 max-h-36 overflow-y-auto">
               {selectedDataList.map((data) => (
                 <div
                   key={data.id}
-                  className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors cursor-pointer"
+                  className="data-card group flex items-center justify-between hover-lift cursor-pointer"
                   onClick={() => onSelectExcelRange?.(data.address)}
                   title={`点击在Excel中选中范围 ${data.address}`}
                 >
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <Table24Regular className="text-blue-600 flex-shrink-0" />
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-white shadow-md hover-glow">
+                      <Table24Regular className="w-5 h-5" />
+                    </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm text-blue-800 font-medium truncate">
+                      <div className="text-sm text-blue-900 font-semibold truncate">
                         {data.address}
                       </div>
-                      <div className="text-xs text-blue-600">
-                        {data.values.length} 行
-                        {data.headers && ` • 包含标题`}
-                        {` • ${data.timestamp.toLocaleTimeString()}`}
+                      <div className="text-xs text-blue-700/80 flex items-center gap-2">
+                        <span>{data.values.length} 行</span>
+                        {data.headers && <span className="flex items-center gap-1">• 包含标题</span>}
+                        <span>• {data.timestamp.toLocaleTimeString()}</span>
                       </div>
                     </div>
                   </div>
                   {onRemoveSelectedData && (
                     <button
                       onClick={(e) => {
-                        e.stopPropagation(); // 防止触发父元素的点击事件
+                        e.stopPropagation();
                         onRemoveSelectedData(data.id);
                       }}
-                      className="p-1 rounded hover:bg-red-100 transition-colors flex-shrink-0"
+                      className="button button-ghost p-2 hover:bg-red-100 hover-scale flex-shrink-0 opacity-70 hover:opacity-100"
                       title="移除此数据"
                     >
-                      <Delete24Regular className="w-4 h-4 text-red-500 hover:text-red-700" />
+                      <Delete24Regular className="w-4 h-4 text-red-500 hover:text-red-600" />
                     </button>
                   )}
                 </div>
@@ -347,25 +333,63 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="flex gap-3">
-          <div className="flex-1 relative">
-            <input
-              type="text"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder="输入消息..."
-              disabled={isLoading}
-              className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
-            />
+        <form onSubmit={handleSubmit} className="relative">
+          <div className="flex gap-4 items-end">
+            <div className="flex-1 relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 rounded-2xl blur-sm"></div>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  placeholder="输入您的问题或指令..."
+                  disabled={isLoading}
+                  className="input px-6 py-4 pr-14 rounded-2xl bg-white/90 backdrop-blur-sm text-base"
+                  style={{
+                    minHeight: '56px',
+                    boxShadow: '0 4px 20px rgba(59, 130, 246, 0.15), 0 1px 3px rgba(0, 0, 0, 0.1)'
+                  }}
+                />
+                {/* 输入框内的装饰元素 */}
+                <div className="absolute right-4 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
+                  {isLoading && (
+                    <div className="flex space-x-1">
+                      <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce"></div>
+                      <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                      <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={!inputValue.trim() || isLoading}
+              className="button button-primary group relative px-6 py-4 rounded-2xl flex items-center gap-3 disabled:hover:translate-y-0"
+              style={{
+                minHeight: '56px',
+                background: inputValue.trim() && !isLoading
+                  ? 'linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)'
+                  : undefined
+              }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <Send24Regular className="w-5 h-5 relative z-10 hover-scale" />
+              <span className="hidden sm:inline relative z-10">发送</span>
+              {inputValue.trim() && !isLoading && (
+                <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl blur opacity-30 group-hover:opacity-50 transition-opacity duration-300"></div>
+              )}
+            </button>
           </div>
-          <button
-            type="submit"
-            disabled={!inputValue.trim() || isLoading}
-            className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all shadow-sm flex items-center gap-2"
-          >
-            <Send24Regular className="w-4 h-4" />
-            <span className="hidden sm:inline">发送</span>
-          </button>
+
+          {/* 底部提示文字 */}
+          <div className="mt-3 text-xs text-gray-500 text-center">
+            <span className="inline-flex items-center gap-1">
+              按 Enter 发送消息
+              <kbd className="px-2 py-1 bg-gray-100 border border-gray-200 rounded text-xs">⏎</kbd>
+            </span>
+          </div>
         </form>
       </div>
     </div>

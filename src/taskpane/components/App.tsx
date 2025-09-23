@@ -242,39 +242,39 @@ const App: React.FC<AppProps> = () => {
   };
 
   const renderWelcomeScreen = () => (
-    <div className="h-full flex flex-col items-center justify-center p-6 bg-gradient-to-b from-blue-50 to-white">
-      <div className="text-center max-w-md">
+    <div className="welcome-container fade-in">
+      <div className="welcome-card scale-in">
         <div className="mb-6">
-          <Home24Regular className="text-6xl text-blue-600 mx-auto mb-4" />
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Egent</h1>
-          <p className="text-lg text-gray-600 mb-4">Excel AI 助手</p>
-          <p className="text-sm text-gray-500">
+          <Home24Regular className="welcome-icon" />
+          <h1 className="welcome-title">Egent</h1>
+          <p className="welcome-subtitle">Excel AI 助手</p>
+          <p className="welcome-description">
             专为 Excel 数据分析设计的智能助手，支持 Chat 模式进行数据对话分析
           </p>
         </div>
 
         {!apiConfigured ? (
           <div className="space-y-4">
-            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <p className="text-yellow-800 text-sm">
+            <div className="alert alert-warning">
+              <p className="text-sm">
                 需要先配置 API 设置才能开始使用
               </p>
             </div>
             <button
               onClick={() => setCurrentView('settings')}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              className="button button-primary button-large"
             >
               配置 API 设置
             </button>
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-              <p className="text-green-800 text-sm">✅ API 已配置，可以开始使用</p>
+            <div className="alert alert-success">
+              <p className="text-sm">✅ API 已配置，可以开始使用</p>
             </div>
             <button
               onClick={() => setCurrentView('chat')}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              className="button button-primary button-large"
             >
               开始聊天
             </button>
@@ -282,14 +282,16 @@ const App: React.FC<AppProps> = () => {
         )}
 
         <div className="mt-8 grid grid-cols-1 gap-4 text-sm">
-          <div className="p-3 bg-white border border-gray-200 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
-              <Chat24Regular className="text-blue-600" />
-              <span className="font-medium">Chat 模式</span>
+          <div className="card hover-lift">
+            <div className="card-body">
+              <div className="flex items-center gap-2 mb-2">
+                <Chat24Regular className="text-blue-600" />
+                <span className="font-medium">Chat 模式</span>
+              </div>
+              <p className="text-gray-600 text-xs">
+                读取选中的 Excel 数据，与 AI 进行对话分析，不会修改表格内容
+              </p>
             </div>
-            <p className="text-gray-600 text-xs">
-              读取选中的 Excel 数据，与 AI 进行对话分析，不会修改表格内容
-            </p>
           </div>
         </div>
       </div>
@@ -297,21 +299,19 @@ const App: React.FC<AppProps> = () => {
   );
 
   const renderTopBar = () => (
-    <div className="bg-white border-b border-gray-200 px-4 py-3">
+    <div className="top-bar">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <h1 className="text-lg font-semibold text-gray-800">Egent</h1>
-
           {currentView === 'chat' && (
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-500">模式:</span>
-              <div className="flex bg-gray-100 rounded-lg p-1">
+              <div className="mode-selector">
                 <button
                   onClick={() => setChatMode('chat')}
-                  className={`px-3 py-1 text-xs rounded-md transition-colors ${
+                  className={`mode-button ${
                     chatMode === 'chat'
-                      ? 'bg-white text-blue-600 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-800'
+                      ? 'mode-button-active'
+                      : 'mode-button-inactive'
                   }`}
                 >
                   Chat
@@ -319,7 +319,7 @@ const App: React.FC<AppProps> = () => {
                 <button
                   onClick={() => setChatMode('agent')}
                   disabled
-                  className="px-3 py-1 text-xs rounded-md text-gray-400 cursor-not-allowed"
+                  className="mode-button text-gray-400 cursor-not-allowed"
                 >
                   Agent (即将推出)
                 </button>
@@ -328,25 +328,25 @@ const App: React.FC<AppProps> = () => {
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="toolbar">
           {currentView === 'chat' && (
             <>
               <button
                 onClick={() => handleReadExcelData(false)}
-                className="px-3 py-2 text-sm bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors flex items-center gap-1"
+                className="toolbar-button toolbar-button-primary"
               >
                 <Table24Regular className="w-4 h-4" />
                 读取选中数据
               </button>
               <button
                 onClick={() => handleReadExcelData(true)}
-                className="px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+                className="toolbar-button toolbar-button-secondary"
               >
                 读取全部数据
               </button>
               <button
                 onClick={startNewChat}
-                className="px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+                className="toolbar-button toolbar-button-secondary"
               >
                 新对话
               </button>
@@ -355,10 +355,10 @@ const App: React.FC<AppProps> = () => {
 
           <button
             onClick={() => setCurrentView(currentView === 'settings' ? 'chat' : 'settings')}
-            className={`p-2 rounded-md transition-colors ${
+            className={`button button-ghost p-2 ${
               currentView === 'settings'
                 ? 'bg-blue-100 text-blue-700'
-                : 'text-gray-600 hover:bg-gray-100'
+                : ''
             }`}
           >
             <Settings24Regular className="w-4 h-4" />
@@ -369,7 +369,7 @@ const App: React.FC<AppProps> = () => {
   );
 
   return (
-    <div className="h-screen flex flex-col bg-gray-50">
+    <div className="h-screen flex flex-col bg-gradient-to-br from-gray-50 to-blue-50/30">
       {currentView !== 'welcome' && renderTopBar()}
 
       <div className="flex-1 overflow-hidden">

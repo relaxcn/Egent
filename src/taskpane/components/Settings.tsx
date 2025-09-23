@@ -105,8 +105,8 @@ const Settings: React.FC<SettingsProps> = ({ onClose }) => {
   };
 
   return (
-    <div className="h-full bg-gray-50 p-6">
-      <div className="max-w-2xl mx-auto">
+    <div className="h-full bg-gradient-to-br from-gray-50 to-blue-50/30 p-6">
+      <div className="container max-w-2xl">
         {/* Header */}
         <div className="flex items-center gap-3 mb-8">
           <Settings24Regular className="text-blue-600" />
@@ -114,7 +114,8 @@ const Settings: React.FC<SettingsProps> = ({ onClose }) => {
         </div>
 
         {/* Settings Card */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="card card-elevated fade-in">
+          <div className="card-body">
           <div className="mb-6">
             <h2 className="text-lg font-medium text-gray-800 mb-2">OpenAI 兼容 API 设置</h2>
             <p className="text-sm text-gray-600">配置您的 AI 服务连接信息</p>
@@ -123,22 +124,24 @@ const Settings: React.FC<SettingsProps> = ({ onClose }) => {
           <div className="space-y-6">
             {/* Base URL */}
             <div>
-              <label htmlFor="baseUrl" className="block text-sm font-medium text-gray-700 mb-2">
-                Base URL <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="baseUrl"
-                type="text"
-                value={settings.baseUrl}
-                onChange={(e) => handleInputChange("baseUrl", e.target.value)}
-                placeholder="https://api.openai.com/v1"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              />
+              <div className="form-group">
+                <label htmlFor="baseUrl" className="label">
+                  Base URL <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="baseUrl"
+                  type="text"
+                  value={settings.baseUrl}
+                  onChange={(e) => handleInputChange("baseUrl", e.target.value)}
+                  placeholder="https://api.openai.com/v1"
+                  className="input"
+                />
+              </div>
             </div>
 
             {/* API Key */}
-            <div>
-              <label htmlFor="apiKey" className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="form-group">
+              <label htmlFor="apiKey" className="label">
                 API Key <span className="text-red-500">*</span>
               </label>
               <input
@@ -147,9 +150,9 @@ const Settings: React.FC<SettingsProps> = ({ onClose }) => {
                 value={settings.apiKey}
                 onChange={(e) => handleInputChange("apiKey", e.target.value)}
                 placeholder="输入您的 API Key"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                className="input"
               />
-              <p className="text-xs text-gray-500 mt-1">API Key 将安全存储在本地</p>
+              <p className="form-text">API Key 将安全存储在本地</p>
             </div>
 
             {/* Model */}
@@ -161,7 +164,7 @@ const Settings: React.FC<SettingsProps> = ({ onClose }) => {
                 <button
                   onClick={handleLoadModels}
                   disabled={isLoadingModels || !settings.baseUrl || !settings.apiKey}
-                  className="px-3 py-1 text-xs bg-gray-100 text-gray-600 rounded hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="button button-ghost button-small"
                 >
                   {isLoadingModels ? "加载中..." : "获取可用模型"}
                 </button>
@@ -172,7 +175,7 @@ const Settings: React.FC<SettingsProps> = ({ onClose }) => {
                   id="model"
                   value={settings.model}
                   onChange={(e) => handleInputChange("model", e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  className="input"
                 >
                   {availableModels.map(model => (
                     <option key={model} value={model}>{model}</option>
@@ -185,7 +188,7 @@ const Settings: React.FC<SettingsProps> = ({ onClose }) => {
                   value={settings.model}
                   onChange={(e) => handleInputChange("model", e.target.value)}
                   placeholder="gpt-3.5-turbo"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  className="input"
                 />
               )}
             </div>
@@ -195,7 +198,7 @@ const Settings: React.FC<SettingsProps> = ({ onClose }) => {
               <button
                 onClick={handleTestConnection}
                 disabled={isTestingConnection || !settings.baseUrl || !settings.apiKey}
-                className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                className="button button-secondary w-full flex items-center justify-center gap-2"
               >
                 {isTestingConnection ? (
                   <>
@@ -210,10 +213,10 @@ const Settings: React.FC<SettingsProps> = ({ onClose }) => {
 
             {/* Test Result */}
             {testResult && (
-              <div className={`p-3 rounded-lg flex items-center gap-2 ${
+              <div className={`alert flex items-center gap-2 ${
                 testResult.success
-                  ? "bg-green-50 border border-green-200 text-green-800"
-                  : "bg-red-50 border border-red-200 text-red-800"
+                  ? "alert-success"
+                  : "alert-error"
               }`}>
                 {testResult.success ? (
                   <CheckmarkCircle24Regular className="text-green-600" />
@@ -229,16 +232,17 @@ const Settings: React.FC<SettingsProps> = ({ onClose }) => {
           <div className="flex gap-3 mt-8 pt-6 border-t border-gray-200">
             <button
               onClick={handleSave}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors font-medium"
+              className="button button-primary"
             >
               保存设置
             </button>
             <button
               onClick={onClose}
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
+              className="button button-secondary"
             >
               取消
             </button>
+          </div>
           </div>
         </div>
       </div>
