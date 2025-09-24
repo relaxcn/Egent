@@ -39,8 +39,8 @@ const SYSTEM_PROMPT = `你是 Egent，一个专门帮助用户分析 Excel 数�
 如果用户提供了 Excel 数据，请基于该数据进行分析和回答。`;
 
 export class OpenAIService {
-  private client: OpenAI;
-  private settings: ApiSettings;
+  protected client: OpenAI;
+  protected settings: ApiSettings;
 
   constructor(settings: ApiSettings) {
     this.settings = settings;
@@ -52,7 +52,7 @@ export class OpenAIService {
     });
   }
 
-  private getErrorMessage(error: Error): string {
+  protected getErrorMessage(error: Error): string {
     if (error.message.includes("401") || error.message.includes("Unauthorized")) {
       return "API Key 无效，请检查配置";
     } else if (error.message.includes("429") || error.message.includes("Rate limit")) {
@@ -66,7 +66,7 @@ export class OpenAIService {
     }
   }
 
-  private formatExcelDataForAI(dataList: ExcelData | ExcelData[]): string {
+  protected formatExcelDataForAI(dataList: ExcelData | ExcelData[]): string {
     const dataArray = Array.isArray(dataList) ? dataList : [dataList];
 
     if (dataArray.length === 0) return "";

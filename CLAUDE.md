@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Egent is a Microsoft Office Excel add-in built as a task pane application using React, TypeScript, and the Office.js API. The project aims to provide AI agent functionality for Excel users, offering both chat-based interactions and automated Excel data manipulation through the MCP (Model Context Protocol) protocol.
+Egent is a Microsoft Office Excel add-in built as a task pane application using React, TypeScript, and the Office.js API. The project aims to provide AI agent functionality for Excel users, offering both chat-based interactions and automated Excel data manipulation through OpenAI Function Calling.
 
 ## Development Commands
 

@@ -25,7 +25,7 @@ Agent 是一个自动化的代理工具，它可以对 Excel 表格进行修改�
 
 ### Agent
 
-Agent 使用 MCP 协议，让 LLM AI 与 Excel API 进行交互。
+Agent 使用 OpenAI Function Calling，让 LLM AI 与 Excel API 进行交互。
 
 本项目定义了一套用于修改 Excel 数据的标准函数，它们直接与 Excel JS API 进行交互。例如：
 

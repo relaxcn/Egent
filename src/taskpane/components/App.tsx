@@ -4,7 +4,7 @@ import { Settings24Regular, Chat24Regular, Table24Regular, Home24Regular } from 
 import ChatInterface, { ChatMessage } from "./ChatInterface";
 import Settings from "./Settings";
 import { getSelectedData, getAllWorksheetData, ExcelData, selectRangeByAddress } from "../taskpane";
-import { OpenAIService, StreamCallback } from "../services/openai";
+import { EnhancedOpenAIService, EnhancedStreamCallback, ExcelActionResult } from "../services/enhanced-openai";
 import { getApiSettings, validateApiSettings } from "../utils/settings";
 
 interface AppProps {
@@ -22,6 +22,7 @@ const App: React.FC<AppProps> = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [apiConfigured, setApiConfigured] = useState(false);
   const [usedDataIds, setUsedDataIds] = useState<Set<string>>(new Set()); // 跟踪已使用的数据ID
+  const [excelOperations, setExcelOperations] = useState<ExcelActionResult[]>([]); // 跟踪Excel操作结果
 
   useEffect(() => {
     // Check if API is configured on startup
@@ -125,7 +126,10 @@ const App: React.FC<AppProps> = () => {
 
     try {
       const settings = getApiSettings();
-      const openAIService = new OpenAIService(settings);
+      const enhancedOpenAIService = new EnhancedOpenAIService(settings);
+
+      // 根据模式设置Excel操作功能
+      enhancedOpenAIService.setExcelOperationsEnabled(chatMode === 'agent');
 
       // Convert messages to API format
       const conversationHistory = messages.filter(m => m.type !== 'system').map(m => ({
@@ -133,8 +137,11 @@ const App: React.FC<AppProps> = () => {
         content: m.content
       }));
 
-      // 创建流式回调
-      const streamCallbacks: StreamCallback = {
+      // 重置Excel操作记录
+      setExcelOperations([]);
+
+      // 创建增强的流式回调
+      const enhancedStreamCallbacks: EnhancedStreamCallback = {
         onChunk: (chunk: string) => {
           setMessages(prev => prev.map(msg =>
             msg.id === assistantMessageId
@@ -170,13 +177,39 @@ const App: React.FC<AppProps> = () => {
               : msg
           ));
           setIsLoading(false);
+        },
+        onExcelAction: (action: string, result: ExcelActionResult) => {
+          // 记录Excel操作结果
+          setExcelOperations(prev => [...prev, result]);
+
+          // 可选：在UI中显示操作反馈
+          console.log(`🔧 Excel操作: ${action}`, result);
+
+          // 如果操作成功，可以显示一个临时消息
+          if (result.success) {
+            const operationMessage: ChatMessage = {
+              id: `excel-${Date.now()}`,
+              type: 'system',
+              content: `✅ Excel操作完成: ${result.content}`,
+              timestamp: new Date()
+            };
+            setMessages(prev => [...prev, operationMessage]);
+          } else if (result.error) {
+            const errorMessage: ChatMessage = {
+              id: `excel-error-${Date.now()}`,
+              type: 'system',
+              content: `❌ Excel操作失败: ${result.error}`,
+              timestamp: new Date()
+            };
+            setMessages(prev => [...prev, errorMessage]);
+          }
         }
       };
 
-      // 使用流式发送消息
-      await openAIService.sendMessageStream(
+      // 使用增强的流式发送消息
+      await enhancedOpenAIService.sendMessageStreamWithExcel(
         content,
-        streamCallbacks,
+        enhancedStreamCallbacks,
         usedDataSnapshot,
         conversationHistory
       );
@@ -249,7 +282,7 @@ const App: React.FC<AppProps> = () => {
           <h1 className="welcome-title">Egent</h1>
           <p className="welcome-subtitle">Excel AI 助手</p>
           <p className="welcome-description">
-            专为 Excel 数据分析设计的智能助手，支持 Chat 模式进行数据对话分析
+            专为 Excel 数据分析设计的智能助手，支持智能对话分析和Excel操作
           </p>
         </div>
 
@@ -293,6 +326,17 @@ const App: React.FC<AppProps> = () => {
               </p>
             </div>
           </div>
+          <div className="card hover-lift">
+            <div className="card-body">
+              <div className="flex items-center gap-2 mb-2">
+                <Table24Regular className="text-green-600" />
+                <span className="font-medium">Agent 模式</span>
+              </div>
+              <p className="text-gray-600 text-xs">
+                智能分析用户意图，可直接执行Excel操作：插入数据、设置颜色、创建图表等
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -318,10 +362,13 @@ const App: React.FC<AppProps> = () => {
                 </button>
                 <button
                   onClick={() => setChatMode('agent')}
-                  disabled
-                  className="mode-button text-gray-400 cursor-not-allowed"
+                  className={`mode-button ${
+                    chatMode === 'agent'
+                      ? 'mode-button-active'
+                      : 'mode-button-inactive'
+                  }`}
                 >
-                  Agent (即将推出)
+                  Agent (Excel操作)
                 </button>
               </div>
             </div>
