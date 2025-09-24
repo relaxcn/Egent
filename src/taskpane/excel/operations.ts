@@ -403,6 +403,9 @@ export class ExcelOperations {
           }
         }
 
+        // 加载需要访问的图表属性
+        chart.load(['name', 'id']);
+
         await context.sync();
 
         const result: ExcelChartResult = {
