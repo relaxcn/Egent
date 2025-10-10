@@ -1,12 +1,13 @@
 import * as React from "react";
 import { createRoot } from "react-dom/client";
 import App from "./components/App";
-import { FluentProvider, webLightTheme } from "@fluentui/react-components";
+import { ConfigProvider, theme } from "antd";
+import zhCN from "antd/locale/zh_CN";
 import "../styles/main.css";
 
 /* global document, Office, module, require, HTMLElement */
 
-const title = "Contoso Task Pane Add-in";
+const title = "Egent - Excel AI 助手";
 
 const rootElement: HTMLElement | null = document.getElementById("container");
 const root = rootElement ? createRoot(rootElement) : undefined;
@@ -14,9 +15,19 @@ const root = rootElement ? createRoot(rootElement) : undefined;
 /* Render application after Office initializes */
 Office.onReady(() => {
   root?.render(
-    <FluentProvider theme={webLightTheme}>
+    <ConfigProvider
+      locale={zhCN}
+      theme={{
+        token: {
+          colorPrimary: "#1677ff",
+          borderRadius: 8,
+          colorBgContainer: "#ffffff",
+        },
+        algorithm: theme.defaultAlgorithm,
+      }}
+    >
       <App title={title} />
-    </FluentProvider>
+    </ConfigProvider>
   );
 });
 

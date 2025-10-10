@@ -1,6 +1,14 @@
 import * as React from "react";
 import { useState, useEffect } from "react";
-import { Settings24Regular, Chat24Regular, Table24Regular, Home24Regular } from "@fluentui/react-icons";
+import { Button, Space, Card, Divider, Segmented, Badge } from "antd";
+import {
+  SettingOutlined,
+  MessageOutlined,
+  TableOutlined,
+  HomeOutlined,
+  PlusOutlined,
+  DownloadOutlined,
+} from "@ant-design/icons";
 import ChatInterface, { ChatMessage } from "./ChatInterface";
 import Settings from "./Settings";
 import { getSelectedData, getAllWorksheetData, ExcelData, selectRangeByAddress } from "../taskpane";
@@ -18,14 +26,13 @@ const App: React.FC<AppProps> = () => {
   const [currentView, setCurrentView] = useState<AppView>('welcome');
   const [chatMode, setChatMode] = useState<ChatMode>('chat');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [selectedDataList, setSelectedDataList] = useState<ExcelData[]>([]); // 改为数组
+  const [selectedDataList, setSelectedDataList] = useState<ExcelData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [apiConfigured, setApiConfigured] = useState(false);
-  const [usedDataIds, setUsedDataIds] = useState<Set<string>>(new Set()); // 跟踪已使用的数据ID
-  const [excelOperations, setExcelOperations] = useState<ExcelActionResult[]>([]); // 跟踪Excel操作结果
+  const [usedDataIds, setUsedDataIds] = useState<Set<string>>(new Set());
+  const [excelOperations, setExcelOperations] = useState<ExcelActionResult[]>([]);
 
   useEffect(() => {
-    // Check if API is configured on startup
     const settings = getApiSettings();
     const validation = validateApiSettings(settings);
     setApiConfigured(validation.valid);
@@ -33,30 +40,6 @@ const App: React.FC<AppProps> = () => {
     if (validation.valid) {
       setCurrentView('chat');
     }
-
-    // // Disable right-click context menu
-    // const handleContextMenu = (e: MouseEvent) => {
-    //   e.preventDefault();
-    //   return false;
-    // };
-
-    // // Disable F12 developer tools
-    // const handleKeyDown = (e: KeyboardEvent) => {
-    //   if (e.key === 'F12') {
-    //     e.preventDefault();
-    //     return false;
-    //   }
-    //   return true;
-    // };
-
-    // document.addEventListener('contextmenu', handleContextMenu);
-    // document.addEventListener('keydown', handleKeyDown);
-
-    // // Cleanup
-    // return () => {
-    //   document.removeEventListener('contextmenu', handleContextMenu);
-    //   document.removeEventListener('keydown', handleKeyDown);
-    // };
   }, []);
 
   const handleReadExcelData = async (readAll: boolean = false) => {
@@ -64,7 +47,6 @@ const App: React.FC<AppProps> = () => {
       const data = readAll ? await getAllWorksheetData() : await getSelectedData();
 
       if (data) {
-        // 检查是否已经选中了相同的数据
         const isDuplicate = selectedDataList.some(existing =>
           existing.address === data.address &&
           JSON.stringify(existing.values) === JSON.stringify(data.values)
@@ -73,9 +55,7 @@ const App: React.FC<AppProps> = () => {
         if (!isDuplicate) {
           setSelectedDataList(prev => [...prev, data]);
         }
-        // 移除了系统消息的添加，只显示在列表中
       } else {
-        // 只在没有数据时显示错误消息
         const errorMessage: ChatMessage = {
           id: Date.now().toString(),
           type: 'system',
@@ -112,7 +92,6 @@ const App: React.FC<AppProps> = () => {
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
 
-    // 创建初始的助手消息（空内容，标记为streaming）
     const assistantMessageId = (Date.now() + 1).toString();
     const assistantMessage: ChatMessage = {
       id: assistantMessageId,
@@ -127,20 +106,15 @@ const App: React.FC<AppProps> = () => {
     try {
       const settings = getApiSettings();
       const enhancedOpenAIService = new EnhancedOpenAIService(settings);
-
-      // 根据模式设置Excel操作功能
       enhancedOpenAIService.setExcelOperationsEnabled(chatMode === 'agent');
 
-      // Convert messages to API format
       const conversationHistory = messages.filter(m => m.type !== 'system').map(m => ({
         role: m.type,
         content: m.content
       }));
 
-      // 重置Excel操作记录
       setExcelOperations([]);
 
-      // 创建增强的流式回调
       const enhancedStreamCallbacks: EnhancedStreamCallback = {
         onChunk: (chunk: string) => {
           setMessages(prev => prev.map(msg =>
@@ -157,7 +131,6 @@ const App: React.FC<AppProps> = () => {
           ));
           setIsLoading(false);
 
-          // 标记所有使用过的数据
           if (usedDataSnapshot && usedDataSnapshot.length > 0) {
             const usedIds = usedDataSnapshot.map(data => data.id);
             setUsedDataIds(prev => {
@@ -166,7 +139,6 @@ const App: React.FC<AppProps> = () => {
               return newSet;
             });
 
-            // 清空选中的数据列表
             setSelectedDataList([]);
           }
         },
@@ -179,13 +151,9 @@ const App: React.FC<AppProps> = () => {
           setIsLoading(false);
         },
         onExcelAction: (action: string, result: ExcelActionResult) => {
-          // 记录Excel操作结果
           setExcelOperations(prev => [...prev, result]);
-
-          // 可选：在UI中显示操作反馈
           console.log(`🔧 Excel操作: ${action}`, result);
 
-          // 如果操作成功，可以显示一个临时消息
           if (result.success) {
             const operationMessage: ChatMessage = {
               id: `excel-${Date.now()}`,
@@ -206,7 +174,6 @@ const App: React.FC<AppProps> = () => {
         }
       };
 
-      // 使用增强的流式发送消息
       await enhancedOpenAIService.sendMessageStreamWithExcel(
         content,
         enhancedStreamCallbacks,
@@ -225,12 +192,10 @@ const App: React.FC<AppProps> = () => {
     }
   };
 
-  // 简化删除函数，只需要从选中列表中移除
   const handleRemoveSelectedData = (dataId: string) => {
     setSelectedDataList(prev => prev.filter(data => data.id !== dataId));
   };
 
-  // 处理选中Excel范围
   const handleSelectExcelRange = async (address: string) => {
     try {
       const success = await selectRangeByAddress(address);
@@ -256,7 +221,6 @@ const App: React.FC<AppProps> = () => {
   };
 
   const handleSettingsClose = () => {
-    // Re-check API configuration
     const settings = getApiSettings();
     const validation = validateApiSettings(settings);
     setApiConfigured(validation.valid);
@@ -270,148 +234,145 @@ const App: React.FC<AppProps> = () => {
 
   const startNewChat = () => {
     setMessages([]);
-    setSelectedDataList([]); // 清空选中数据列表
-    setUsedDataIds(new Set()); // 重置已使用数据ID
+    setSelectedDataList([]);
+    setUsedDataIds(new Set());
   };
 
   const renderWelcomeScreen = () => (
     <div className="welcome-container fade-in">
       <div className="welcome-card scale-in">
-        <div className="mb-6">
-          <Home24Regular className="welcome-icon" />
-          <h1 className="welcome-title">Egent</h1>
-          <p className="welcome-subtitle">Excel AI 助手</p>
-          <p className="welcome-description">
-            专为 Excel 数据分析设计的智能助手，支持智能对话分析和Excel操作
-          </p>
-        </div>
+        <Space direction="vertical" size="large" style={{ width: '100%' }}>
+          <div style={{ textAlign: 'center' }}>
+            <HomeOutlined style={{ fontSize: 48, color: '#1677ff', marginBottom: 16 }} />
+            <h1 className="welcome-title">Egent</h1>
+            <p className="welcome-subtitle">Excel AI 助手</p>
+            <p className="welcome-description">
+              专为 Excel 数据分析设计的智能助手，支持智能对话分析和Excel操作
+            </p>
+          </div>
 
-        {!apiConfigured ? (
-          <div className="space-y-4">
-            <div className="alert alert-warning">
-              <p className="text-sm">
-                需要先配置 API 设置才能开始使用
-              </p>
-            </div>
-            <button
-              onClick={() => setCurrentView('settings')}
-              className="button button-primary button-large"
-            >
-              配置 API 设置
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div className="alert alert-success">
-              <p className="text-sm">✅ API 已配置，可以开始使用</p>
-            </div>
-            <button
-              onClick={() => setCurrentView('chat')}
-              className="button button-primary button-large"
-            >
-              开始聊天
-            </button>
-          </div>
-        )}
+          {!apiConfigured ? (
+            <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+              <Card size="small" style={{ backgroundColor: '#fff7e6', border: '1px solid #ffd591' }}>
+                <p style={{ margin: 0, fontSize: 14, color: '#d46b08' }}>
+                  需要先配置 API 设置才能开始使用
+                </p>
+              </Card>
+              <Button
+                type="primary"
+                size="large"
+                block
+                onClick={() => setCurrentView('settings')}
+                icon={<SettingOutlined />}
+              >
+                配置 API 设置
+              </Button>
+            </Space>
+          ) : (
+            <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+              <Card size="small" style={{ backgroundColor: '#f6ffed', border: '1px solid #b7eb8f' }}>
+                <p style={{ margin: 0, fontSize: 14, color: '#52c41a' }}>
+                  ✅ API 已配置，可以开始使用
+                </p>
+              </Card>
+              <Button
+                type="primary"
+                size="large"
+                block
+                onClick={() => setCurrentView('chat')}
+                icon={<MessageOutlined />}
+              >
+                开始聊天
+              </Button>
+            </Space>
+          )}
 
-        <div className="mt-8 grid grid-cols-1 gap-4 text-sm">
-          <div className="card hover-lift">
-            <div className="card-body">
-              <div className="flex items-center gap-2 mb-2">
-                <Chat24Regular className="text-blue-600" />
-                <span className="font-medium">Chat 模式</span>
-              </div>
-              <p className="text-gray-600 text-xs">
-                读取选中的 Excel 数据，与 AI 进行对话分析，不会修改表格内容
-              </p>
-            </div>
-          </div>
-          <div className="card hover-lift">
-            <div className="card-body">
-              <div className="flex items-center gap-2 mb-2">
-                <Table24Regular className="text-green-600" />
-                <span className="font-medium">Agent 模式</span>
-              </div>
-              <p className="text-gray-600 text-xs">
-                智能分析用户意图，可直接执行Excel操作：插入数据、设置颜色、创建图表等
-              </p>
-            </div>
-          </div>
-        </div>
+          <Divider />
+
+          <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+            <Card hoverable size="small">
+              <Space>
+                <MessageOutlined style={{ fontSize: 24, color: '#1677ff' }} />
+                <div>
+                  <div style={{ fontWeight: 500, marginBottom: 4 }}>Chat 模式</div>
+                  <p style={{ margin: 0, fontSize: 12, color: '#666' }}>
+                    读取选中的 Excel 数据，与 AI 进行对话分析，不会修改表格内容
+                  </p>
+                </div>
+              </Space>
+            </Card>
+            <Card hoverable size="small">
+              <Space>
+                <TableOutlined style={{ fontSize: 24, color: '#52c41a' }} />
+                <div>
+                  <div style={{ fontWeight: 500, marginBottom: 4 }}>Agent 模式</div>
+                  <p style={{ margin: 0, fontSize: 12, color: '#666' }}>
+                    智能分析用户意图，可直接执行Excel操作：插入数据、设置颜色、创建图表等
+                  </p>
+                </div>
+              </Space>
+            </Card>
+          </Space>
+        </Space>
       </div>
     </div>
   );
 
   const renderTopBar = () => (
     <div className="top-bar">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+      <Space style={{ width: '100%', justifyContent: 'space-between' }}>
+        <Space>
           {currentView === 'chat' && (
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-500">模式:</span>
-              <div className="mode-selector">
-                <button
-                  onClick={() => setChatMode('chat')}
-                  className={`mode-button ${
-                    chatMode === 'chat'
-                      ? 'mode-button-active'
-                      : 'mode-button-inactive'
-                  }`}
-                >
-                  Chat
-                </button>
-                <button
-                  onClick={() => setChatMode('agent')}
-                  className={`mode-button ${
-                    chatMode === 'agent'
-                      ? 'mode-button-active'
-                      : 'mode-button-inactive'
-                  }`}
-                >
-                  Agent (Excel操作)
-                </button>
-              </div>
-            </div>
+            <Space size="small">
+              <span style={{ fontSize: 14, color: '#666' }}>模式:</span>
+              <Segmented
+                value={chatMode}
+                onChange={(value) => setChatMode(value as ChatMode)}
+                options={[
+                  { label: 'Chat', value: 'chat', icon: <MessageOutlined /> },
+                  { label: 'Agent', value: 'agent', icon: <TableOutlined /> }
+                ]}
+              />
+            </Space>
           )}
-        </div>
+        </Space>
 
-        <div className="toolbar">
+        <Space size="small">
           {currentView === 'chat' && (
             <>
-              <button
+              <Button
+                type="primary"
+                size="small"
+                icon={<TableOutlined />}
                 onClick={() => handleReadExcelData(false)}
-                className="toolbar-button toolbar-button-primary"
               >
-                <Table24Regular className="w-4 h-4" />
-                读取选中数据
-              </button>
-              <button
+                读取选中
+              </Button>
+              <Button
+                size="small"
+                icon={<DownloadOutlined />}
                 onClick={() => handleReadExcelData(true)}
-                className="toolbar-button toolbar-button-secondary"
               >
-                读取全部数据
-              </button>
-              <button
+                读取全部
+              </Button>
+              <Button
+                size="small"
+                icon={<PlusOutlined />}
                 onClick={startNewChat}
-                className="toolbar-button toolbar-button-secondary"
               >
                 新对话
-              </button>
+              </Button>
             </>
           )}
 
-          <button
+          <Button
+            type={currentView === 'settings' ? 'primary' : 'default'}
+            size="small"
+            icon={<SettingOutlined />}
             onClick={() => setCurrentView(currentView === 'settings' ? 'chat' : 'settings')}
-            className={`button button-ghost p-2 ${
-              currentView === 'settings'
-                ? 'bg-blue-100 text-blue-700'
-                : ''
-            }`}
-          >
-            <Settings24Regular className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
+          />
+        </Space>
+      </Space>
     </div>
   );
 

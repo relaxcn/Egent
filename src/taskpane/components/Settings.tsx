@@ -1,6 +1,13 @@
 import * as React from "react";
 import { useState, useEffect } from "react";
-import { Settings24Regular, CheckmarkCircle24Regular, DismissCircle24Regular } from "@fluentui/react-icons";
+import { Form, Input, Button, Space, Card, Alert, Select, Spin, Divider } from "antd";
+import {
+  SettingOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  LoadingOutlined,
+  ApiOutlined,
+} from "@ant-design/icons";
 import { OpenAIService } from "../services/openai";
 import { ApiSettings, getApiSettings, saveApiSettings, validateApiSettings } from "../utils/settings";
 
@@ -9,6 +16,7 @@ interface SettingsProps {
 }
 
 const Settings: React.FC<SettingsProps> = ({ onClose }) => {
+  const [form] = Form.useForm();
   const [settings, setSettings] = useState<ApiSettings>({
     baseUrl: "https://api.openai.com/v1",
     apiKey: "",
@@ -20,10 +28,10 @@ const Settings: React.FC<SettingsProps> = ({ onClose }) => {
   const [isLoadingModels, setIsLoadingModels] = useState(false);
 
   useEffect(() => {
-    // Load settings from localStorage
     const savedSettings = getApiSettings();
     setSettings(savedSettings);
-  }, []);
+    form.setFieldsValue(savedSettings);
+  }, [form]);
 
   const handleSave = () => {
     const validation = validateApiSettings(settings);
@@ -45,7 +53,6 @@ const Settings: React.FC<SettingsProps> = ({ onClose }) => {
       ...prev,
       [field]: value
     }));
-    // Clear test result when settings change
     setTestResult(null);
   };
 
@@ -107,144 +114,118 @@ const Settings: React.FC<SettingsProps> = ({ onClose }) => {
   return (
     <div className="h-full bg-gradient-to-br from-gray-50 to-blue-50/30 p-6">
       <div className="container max-w-2xl">
-        {/* Header */}
-        <div className="flex items-center gap-3 mb-8">
-          <Settings24Regular className="text-blue-600" />
-          <h1 className="text-2xl font-semibold text-gray-800">API 配置</h1>
-        </div>
+        <Space direction="vertical" size="large" style={{ width: '100%' }}>
+          <Space>
+            <SettingOutlined style={{ fontSize: 24, color: '#1677ff' }} />
+            <h1 style={{ fontSize: 24, fontWeight: 600, margin: 0 }}>API 配置</h1>
+          </Space>
 
-        {/* Settings Card */}
-        <div className="card card-elevated fade-in">
-          <div className="card-body">
-          <div className="mb-6">
-            <h2 className="text-lg font-medium text-gray-800 mb-2">OpenAI 兼容 API 设置</h2>
-            <p className="text-sm text-gray-600">配置您的 AI 服务连接信息</p>
-          </div>
-
-          <div className="space-y-6">
-            {/* Base URL */}
-            <div>
-              <div className="form-group">
-                <label htmlFor="baseUrl" className="label">
-                  Base URL <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="baseUrl"
-                  type="text"
-                  value={settings.baseUrl}
-                  onChange={(e) => handleInputChange("baseUrl", e.target.value)}
-                  placeholder="https://api.openai.com/v1"
-                  className="input"
-                />
-              </div>
-            </div>
-
-            {/* API Key */}
-            <div className="form-group">
-              <label htmlFor="apiKey" className="label">
-                API Key <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="apiKey"
-                type="password"
-                value={settings.apiKey}
-                onChange={(e) => handleInputChange("apiKey", e.target.value)}
-                placeholder="输入您的 API Key"
-                className="input"
-              />
-              <p className="form-text">API Key 将安全存储在本地</p>
-            </div>
-
-            {/* Model */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label htmlFor="model" className="block text-sm font-medium text-gray-700">
-                  模型
-                </label>
-                <button
-                  onClick={handleLoadModels}
-                  disabled={isLoadingModels || !settings.baseUrl || !settings.apiKey}
-                  className="button button-ghost button-small"
-                >
-                  {isLoadingModels ? "加载中..." : "获取可用模型"}
-                </button>
+          <Card className="fade-in" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+            <Space direction="vertical" size="large" style={{ width: '100%' }}>
+              <div>
+                <h2 style={{ fontSize: 18, fontWeight: 500, marginBottom: 8 }}>
+                  OpenAI 兼容 API 设置
+                </h2>
+                <p style={{ fontSize: 14, color: '#666', margin: 0 }}>
+                  配置您的 AI 服务连接信息
+                </p>
               </div>
 
-              {availableModels.length > 0 ? (
-                <select
-                  id="model"
-                  value={settings.model}
-                  onChange={(e) => handleInputChange("model", e.target.value)}
-                  className="input"
-                >
-                  {availableModels.map(model => (
-                    <option key={model} value={model}>{model}</option>
-                  ))}
-                </select>
-              ) : (
-                <input
-                  id="model"
-                  type="text"
-                  value={settings.model}
-                  onChange={(e) => handleInputChange("model", e.target.value)}
-                  placeholder="gpt-3.5-turbo"
-                  className="input"
-                />
-              )}
-            </div>
-
-            {/* Test Connection */}
-            <div>
-              <button
-                onClick={handleTestConnection}
-                disabled={isTestingConnection || !settings.baseUrl || !settings.apiKey}
-                className="button button-secondary w-full flex items-center justify-center gap-2"
+              <Form
+                form={form}
+                layout="vertical"
+                initialValues={settings}
+                onValuesChange={(_, allValues) => setSettings(allValues)}
               >
-                {isTestingConnection ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
-                    测试连接中...
-                  </>
-                ) : (
-                  "测试 API 连接"
-                )}
-              </button>
-            </div>
+                <Form.Item
+                  label="Base URL"
+                  name="baseUrl"
+                  rules={[{ required: true, message: '请输入 Base URL' }]}
+                >
+                  <Input
+                    prefix={<ApiOutlined />}
+                    placeholder="https://api.openai.com/v1"
+                    onChange={(e) => handleInputChange("baseUrl", e.target.value)}
+                  />
+                </Form.Item>
 
-            {/* Test Result */}
-            {testResult && (
-              <div className={`alert flex items-center gap-2 ${
-                testResult.success
-                  ? "alert-success"
-                  : "alert-error"
-              }`}>
-                {testResult.success ? (
-                  <CheckmarkCircle24Regular className="text-green-600" />
-                ) : (
-                  <DismissCircle24Regular className="text-red-600" />
-                )}
-                <span className="text-sm">{testResult.message}</span>
-              </div>
-            )}
-          </div>
+                <Form.Item
+                  label="API Key"
+                  name="apiKey"
+                  rules={[{ required: true, message: '请输入 API Key' }]}
+                  extra="API Key 将安全存储在本地"
+                >
+                  <Input.Password
+                    placeholder="输入您的 API Key"
+                    onChange={(e) => handleInputChange("apiKey", e.target.value)}
+                  />
+                </Form.Item>
 
-          {/* Action Buttons */}
-          <div className="flex gap-3 mt-8 pt-6 border-t border-gray-200">
-            <button
-              onClick={handleSave}
-              className="button button-primary"
-            >
-              保存设置
-            </button>
-            <button
-              onClick={onClose}
-              className="button button-secondary"
-            >
-              取消
-            </button>
-          </div>
-          </div>
-        </div>
+                <Form.Item label="模型" name="model">
+                  <Space.Compact style={{ width: '100%' }}>
+                    {availableModels.length > 0 ? (
+                      <Select
+                        value={settings.model}
+                        onChange={(value) => handleInputChange("model", value)}
+                        options={availableModels.map(model => ({
+                          label: model,
+                          value: model
+                        }))}
+                        style={{ flex: 1 }}
+                      />
+                    ) : (
+                      <Input
+                        placeholder="gpt-3.5-turbo"
+                        value={settings.model}
+                        onChange={(e) => handleInputChange("model", e.target.value)}
+                        style={{ flex: 1 }}
+                      />
+                    )}
+                    <Button
+                      onClick={handleLoadModels}
+                      disabled={isLoadingModels || !settings.baseUrl || !settings.apiKey}
+                      loading={isLoadingModels}
+                    >
+                      获取模型
+                    </Button>
+                  </Space.Compact>
+                </Form.Item>
+
+                <Form.Item>
+                  <Button
+                    type="default"
+                    block
+                    onClick={handleTestConnection}
+                    disabled={isTestingConnection || !settings.baseUrl || !settings.apiKey}
+                    icon={isTestingConnection ? <LoadingOutlined /> : <ApiOutlined />}
+                  >
+                    {isTestingConnection ? '测试连接中...' : '测试 API 连接'}
+                  </Button>
+                </Form.Item>
+
+                {testResult && (
+                  <Alert
+                    message={testResult.message}
+                    type={testResult.success ? 'success' : 'error'}
+                    showIcon
+                    icon={testResult.success ? <CheckCircleOutlined /> : <CloseCircleOutlined />}
+                  />
+                )}
+              </Form>
+
+              <Divider style={{ margin: 0 }} />
+
+              <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
+                <Button onClick={onClose}>
+                  取消
+                </Button>
+                <Button type="primary" onClick={handleSave}>
+                  保存设置
+                </Button>
+              </Space>
+            </Space>
+          </Card>
+        </Space>
       </div>
     </div>
   );
