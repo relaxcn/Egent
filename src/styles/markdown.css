@@ -1,11 +1,19 @@
 /* Markdown 样式：整体排版 */
-/* Markdown 样式：整体排版 */
 .markdown-content {
   max-width: none;
   color: #0f172a;
   line-height: 1.75;
   font-size: 0.95rem;
   word-break: break-word;
+}
+
+/* Ant Design Typography 集成 */
+.markdown-content.ant-typography {
+  margin-bottom: 0;
+}
+
+.ant-typography .markdown-content {
+  margin-bottom: 0;
 }
 
 .markdown-content p {
