@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useState, useRef, useEffect } from "react";
-import { Button, Input, Space, Card, Badge, Collapse, Table, Typography } from "antd";
+import { Button, Input, Space, Card, Badge, Collapse, Table } from "antd";
 import {
   SendOutlined,
   TableOutlined,
@@ -14,8 +14,6 @@ import {
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ExcelData } from "../taskpane";
-
-const { Paragraph } = Typography;
 
 const { TextArea } = Input;
 
@@ -278,16 +276,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               maxWidth: '85%'
             }}
           >
-            <Typography>
-              <div className="markdown-content">
-                <Markdown remarkPlugins={[remarkGfm]}>
-                  {message.content}
-                </Markdown>
-                {message.isStreaming && (
-                  <span className="streaming-cursor">▋</span>
-                )}
-              </div>
-            </Typography>
+            <div className="markdown-content">
+              <Markdown remarkPlugins={[remarkGfm]}>
+                {message.content}
+              </Markdown>
+              {message.isStreaming && (
+                <span className="streaming-cursor">▋</span>
+              )}
+            </div>
             {message.excelData && formatExcelData(message.excelData)}
           </Card>
         </div>
