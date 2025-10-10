@@ -8,7 +8,7 @@ import {
   LoadingOutlined,
   ApiOutlined,
 } from "@ant-design/icons";
-import { OpenAIService } from "../services/openai";
+import { OpenAIService } from "../services/openai"; // 使用向后兼容的别名
 import { ApiSettings, getApiSettings, saveApiSettings, validateApiSettings } from "../utils/settings";
 
 interface SettingsProps {

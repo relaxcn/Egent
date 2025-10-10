@@ -30,7 +30,7 @@ module.exports = async (env, options) => {
       clean: true,
     },
     resolve: {
-      extensions: [".ts", ".tsx", ".html", ".js"],
+      extensions: [".ts", ".tsx", ".html", ".js", ".md"],
     },
     module: {
       rules: [
@@ -61,6 +61,10 @@ module.exports = async (env, options) => {
           generator: {
             filename: "assets/[name][ext][query]",
           },
+        },
+        {
+          test: /\.md$/,
+          type: "asset/source",
         },
       ],
     },

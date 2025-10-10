@@ -5,4 +5,4 @@
 /* 导入组件样式 */
 @import './components.css';
 @import './markdown.css';
-@import './animations.css';
+/* @import './animations.css'; */  /* 已删除 */

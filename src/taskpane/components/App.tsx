@@ -12,7 +12,7 @@ import {
 import ChatInterface, { ChatMessage } from "./ChatInterface";
 import Settings from "./Settings";
 import { getSelectedData, getAllWorksheetData, ExcelData, selectRangeByAddress } from "../taskpane";
-import { EnhancedOpenAIService, EnhancedStreamCallback, ExcelActionResult } from "../services/enhanced-openai";
+import { EnhancedOpenAIService, EnhancedStreamCallback, ExcelActionResult } from "../services/openai"; // 使用向后兼容的别名
 import { getApiSettings, validateApiSettings } from "../utils/settings";
 
 interface AppProps {
@@ -174,7 +174,7 @@ const App: React.FC<AppProps> = () => {
         }
       };
 
-      await enhancedOpenAIService.sendMessageStreamWithExcel(
+      await enhancedOpenAIService.sendMessageStreamWithFunctionCalling(
         content,
         enhancedStreamCallbacks,
         usedDataSnapshot,
